@@ -53,8 +53,6 @@ const Game = () => {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    console.log(roundInformation)
-    console.log(suggestions)
     if (roundInformation[index + 1] === undefined) {
       dispatch(setRoundInformation(shuffleArray(rounds)))
       dispatch(setIndex(0))
@@ -93,6 +91,7 @@ const Game = () => {
       dispatch(setActiveIndex(activeIndex + 1))
       dispatch(setAttemptNumber(attemptNumber + 1))
       setInputValue('')
+      dispatch(setIsPlaying(false))
     }
   }
 
