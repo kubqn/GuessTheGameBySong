@@ -1,0 +1,43 @@
+.container {
+  width: 100vw;
+  height: 100vh;
+  text-align: center;
+}
+
+.box {
+  background: white;
+  border-radius: 30px;
+  width: 150px;
+  height: 150px;
+  position: absolute;
+  top: calc(50% - 150px / 2);
+  left: calc(50% - 150px / 2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.progress-icon {
+  width: 80%;
+  height: 80%;
+  padding: 5px;
+}
+
+.gamemode-info {
+  position: absolute;
+  top: -50px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    display: flex;
+  }
+  .box {
+    display: none;
+  }
+  .game-mode {
+    width: 50vw;
+    font-size: 0.8rem;
+    position: relative;
+  }
+}

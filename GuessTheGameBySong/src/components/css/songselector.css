@@ -1,0 +1,25 @@
+.song-button {
+  margin: 15px 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.song-button:hover {
+  background-color: var(--light-dark);
+}
+.active {
+  font-weight: 500;
+  font-size: 1.2rem;
+  border: 3px solid var(--dark);
+}
+.disabled {
+  cursor: not-allowed;
+}
+.skip-button {
+  background-color: red;
+  color: white;
+  height: 30px;
+  justify-content: center;
+  padding: 5px;
+  margin-left: 5px;
+  cursor: pointer;
+}

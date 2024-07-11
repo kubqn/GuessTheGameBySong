@@ -1,0 +1,19 @@
+.result-message {
+  border: 3px solid var(--bright);
+  padding: 10px;
+  background-color: gray;
+  margin: 10px 0px;
+  max-width: 450px;
+}
+
+.result-message .button-common {
+  margin: 15px auto auto 5px;
+}
+
+.result-message > p {
+  font-size: 0.75rem;
+}
+
+.result-message > p > span {
+  color: var(--bright);
+}

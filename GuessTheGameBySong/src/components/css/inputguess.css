@@ -1,0 +1,50 @@
+.guess-input {
+  padding: 8px;
+  width: 380px;
+  margin: 20px 0px 10px 0px;
+  border: 2px solid var(--dark);
+}
+
+.guess-input:focus {
+  outline: 2px solid var(--dark);
+}
+.guess-ul {
+  list-style-type: none;
+  padding: 0;
+  max-height: 100px;
+  overflow: auto;
+  border: 1px solid var(--dark);
+  background-color: var(--light);
+  max-width: 400px;
+  margin-bottom: 10px;
+  margin-top: -10px;
+}
+
+.guess-li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.guess-li:hover {
+  background-color: var(--dark);
+}
+
+.flex-container {
+  display: flex;
+  justify-content: center;
+}
+
+.button-input {
+  display: block;
+}
+
+@media (max-width: 480px) {
+  .guess-input {
+    width: 300px;
+  }
+}
+@media (max-width: 480px) {
+  .guess-input {
+    width: 300px;
+  }
+}

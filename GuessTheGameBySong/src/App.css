@@ -1,0 +1,325 @@
+@import url('https://fonts.cdnfonts.com/css/public-pixel');
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+* {
+  margin: 0;
+}
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+#root,
+#__next {
+  isolation: isolate;
+}
+
+:root {
+  --dark: #475b5a;
+  --light-dark: #8d8e8e;
+  --light: #a3a9aa;
+  --bright: #bbbbbf;
+}
+
+body {
+  color: white;
+  text-shadow: 3px 3px 3px #000000;
+  font-family: 'Public Pixel', sans-serif;
+  background: var(--light-dark);
+}
+
+.intro-box {
+  font-size: 0.6rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 5px;
+  height: 100vh;
+}
+
+.game-box {
+  background: rgba(123, 126, 126, 0.678);
+  padding: 25px;
+  outline: 2px solid var(--bright);
+}
+
+.title {
+  margin: 5px;
+}
+body {
+  animation: fadeInAnimation ease 5s;
+  transition: all;
+}
+@keyframes fadeInAnimation {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+button .tooltip-text {
+  visibility: hidden;
+  width: 150px;
+  margin-left: -50px;
+  margin-top: 10px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+}
+
+button:hover .tooltip-text {
+  transition-delay: 1.25s;
+  visibility: visible;
+}
+
+.button-common {
+  cursor: pointer;
+  border-radius: 5px;
+  height: 30px;
+  width: auto;
+  border: 3px groove var(--dark);
+  background-color: var(--bright);
+  letter-spacing: 2px;
+  padding: 5px;
+  margin: 5px 0px;
+}
+.button-common:hover {
+  background-color: var(--dark);
+  color: white;
+  transition: background-color 500ms linear;
+  transition: color 500ms linear;
+}
+
+.rules-section {
+  margin: 0.5rem;
+}
+.rules-section > * > span {
+  font-size: 0.7rem;
+  color: var(--bright);
+}
+
+.rules-section > span:hover {
+  cursor: pointer;
+}
+
+.navigation-button {
+  display: block;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  cursor: pointer;
+  background: none;
+  margin: 30px;
+  letter-spacing: 0.2rem;
+  font-size: 1rem;
+}
+
+.rule-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 80vh;
+  width: 60vw;
+  max-width: 600px;
+  max-height: 600px;
+  border: 3px solid var(--dark);
+  background-color: var(--bright);
+  overflow: auto;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.rules-header {
+  margin-top: 20px;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.rules-list {
+  width: 80%;
+  max-width: 400px;
+  margin: 20px auto;
+  list-style: none;
+  padding: 0;
+}
+
+.rules-list li {
+  font-size: 0.8rem;
+  margin: 10px 0;
+}
+
+.powerup-rule > p,
+.powerup-rule > span {
+  color: var(--bright);
+  list-style: none;
+  margin: 25px 0px 20px 0px;
+  animation: changeColor 2s infinite alternate;
+}
+
+.powerup-rule > p:last-child {
+  padding-bottom: 30px;
+}
+
+@keyframes changeColor {
+  from {
+    color: white;
+  }
+  to {
+    color: var(--bright);
+  }
+}
+
+@media (max-width: 768px) {
+  .game-box {
+    width: 80vw;
+  }
+
+  .navigation-button {
+    font-size: 0.8rem;
+    margin: 20px;
+  }
+
+  .rule-box {
+    width: 90vw;
+    height: 70vh;
+    max-width: none;
+    max-height: none;
+    padding: 0.5rem;
+    border-radius: 8px;
+  }
+
+  .rules-header {
+    font-size: 1.2rem;
+    margin-top: 10px;
+  }
+
+  .rules-list {
+    width: 90%;
+    max-width: none;
+    margin: 10px auto;
+  }
+
+  .rules-list li {
+    font-size: 0.7rem;
+    margin: 8px 0;
+  }
+
+  .powerup-rule > p,
+  .powerup-rule > span {
+    font-size: 0.7rem;
+  }
+}
+@media (max-width: 480px) {
+  .game-box {
+    place-content: center;
+    width: 100vw;
+    height: 100vh;
+    outline: none;
+  }
+  .navigation-button {
+    font-size: 0.5rem;
+    margin: 15px;
+    width: 30px;
+    letter-spacing: 0px;
+  }
+
+  .navigation-button > span {
+    position: absolute;
+    top: 70px;
+    left: 0px;
+  }
+
+  .rule-box {
+    width: 75vw;
+    height: 65vh;
+    padding: 0.3rem;
+    border-radius: 5px;
+  }
+
+  .rules-header {
+    font-size: 1rem;
+    margin-top: 5px;
+  }
+
+  .rules-list li {
+    font-size: 0.6rem;
+    margin: 5px 0;
+  }
+
+  .powerup-rule > p,
+  .powerup-rule > span {
+    font-size: 0.6rem;
+  }
+  button .tooltip-text,
+  button:active .tooltip-text {
+    position: fixed;
+    transform: translateX(-50%);
+    bottom: 10px;
+    left: 50%;
+    top: auto;
+    height: fit-content;
+    width: fit-content;
+    max-width: 90vw;
+  }
+
+  button:hover .tooltip-text {
+    visibility: visible;
+    transition: none; /* Wyłączamy przejścia */
+  }
+}
+
+.intro-box {
+  padding: 0px;
+}
+
+.App {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.background-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  overflow: hidden;
+}
