@@ -1,5 +1,4 @@
 import { useSelector } from 'react-redux'
-import { selectSongData } from '../store/selectors'
 import { RootState } from '../store/store'
 import Confetti from 'react-confetti'
 import useWindowDimensions from './others/windowSize'
@@ -12,7 +11,10 @@ type ResultMessageProps = {
 }
 
 const ResultMessage = ({ answer, handleNextRound }: ResultMessageProps) => {
-  const { attemptNumber, life } = useSelector(selectSongData)
+  const attemptNumber = useSelector(
+    (state: RootState) => state.app.attemptNumber
+  )
+  const life = useSelector((state: RootState) => state.app.life)
 
   const isCorrectAnswer = useSelector(
     (state: RootState) => state.app.isCorrectAnswer

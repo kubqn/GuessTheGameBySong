@@ -285,21 +285,13 @@ button:hover .tooltip-text {
   .powerup-rule > span {
     font-size: 0.6rem;
   }
-  button .tooltip-text,
-  button:active .tooltip-text {
-    position: fixed;
-    transform: translateX(-50%);
-    bottom: 10px;
-    left: 50%;
-    top: auto;
-    height: fit-content;
-    width: fit-content;
-    max-width: 90vw;
+  /*Naprawić przytrzymanie na bardzo małych ekranach  */
+  button .tooltip-text {
   }
 
   button:hover .tooltip-text {
     visibility: visible;
-    transition: none; /* Wyłączamy przejścia */
+    transition-delay: 0.5s;
   }
 }
 

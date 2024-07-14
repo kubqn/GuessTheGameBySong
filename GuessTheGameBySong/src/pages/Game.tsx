@@ -16,10 +16,11 @@ import {
   setIsPlaying,
   setIndex,
   setPowerUps,
+  resetState,
 } from '../store/actions'
 import { motion } from 'framer-motion'
 import ResultMessage from '../components/ResultMessage'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import GameMode from '../components/GameMode'
 import GameOver from '../components/GameOver'
 import PowerUps from '../components/PowerUps'
@@ -47,10 +48,26 @@ const Game = () => {
   )
 
   const [inputValue, setInputValue] = useState('')
-  const [isEndless, setIsEndless] = useState(false)
+  const [isEndless, setIsEndless] = useState<boolean | undefined>(undefined)
   const [isGameModeChosen, setIsGameModeChosen] = useState(false)
 
+  const checkModeRef = useRef(false)
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    const storedIsEndless = localStorage.getItem('isEndless')
+    if (isEndless !== undefined) {
+      localStorage.setItem('isEndless', isEndless.toString())
+    }
+
+    if (checkModeRef.current && isEndless !== undefined) {
+      if (storedIsEndless !== isEndless.toString()) {
+        dispatch(resetState())
+      }
+    } else {
+      checkModeRef.current = true
+    }
+  }, [isEndless])
 
   useEffect(() => {
     if (roundInformation[index + 1] === undefined) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { shuffle } from './others/shuffle'
 
 interface ImageData {
@@ -37,8 +37,12 @@ const checkCollision = (img1: ImageData, img2: ImageData) => {
   )
 }
 
-const Background: React.FC = () => {
+const Background = () => {
   const [images, setImages] = useState<ImageData[]>([])
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  })
 
   const placeImages = () => {
     const containerWidth = window.innerWidth
@@ -91,6 +95,19 @@ const Background: React.FC = () => {
     const handleResize = () => {
       clearTimeout(resizeTimeout)
       resizeTimeout = window.setTimeout(() => {
+        const newWidth = window.innerWidth
+        const newHeight = window.innerHeight
+        const widthDifference = Math.abs(newWidth - windowSize.width)
+        const heightDifference = Math.abs(newHeight - windowSize.height)
+
+        if (widthDifference < 100 && heightDifference < 100) {
+          return
+        }
+
+        setWindowSize({
+          width: newWidth,
+          height: newHeight,
+        })
         placeImages()
       }, 1000)
     }
@@ -101,7 +118,7 @@ const Background: React.FC = () => {
       clearTimeout(resizeTimeout)
       window.removeEventListener('resize', handleResize)
     }
-  }, [])
+  }, [windowSize])
 
   return (
     <div
