@@ -82,14 +82,6 @@ const rounds: RoundInformation[] = [
     ],
   },
   {
-    answer: 'Don_t Starve',
-    songList: [
-      'https://www.dropbox.com/scl/fi/x8d17v3n8w2m7f82ivnl4/Don_t-Stave-OST-Danger.mp3?rlkey=e080kz703bwjx9h3ju164tycb&dl=1',
-      'https://www.dropbox.com/scl/fi/mol4eq0vtdcpwpkfap1dy/Don_t-Stave-OST-Main.mp3?rlkey=upywatozk9ccb6wrr8wqa9qei&dl=1',
-      'https://www.dropbox.com/scl/fi/wneubwc1s5cn0fjamvcn9/Don_t-Stave-OST-Working-Though-Winter.mp3?rlkey=s2cvhfeodbldfvauj7fby1alw&dl=1',
-    ],
-  },
-  {
     answer: 'Dragon Ball FighterZ',
     songList: [
       'https://www.dropbox.com/scl/fi/qk3752bv6fmnmbhbich95/Dragon-Ball-FighterZ-OST-West-City.mp3?rlkey=xkksyvvotspi34r7piml96jls&dl=1',
