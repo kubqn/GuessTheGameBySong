@@ -32,7 +32,12 @@ const InputGuess = ({
     const value = e.target.value
     setInputValue(value)
 
-    if (value.trim().length > 2) {
+    if (value.trim() === '!*')
+    {
+        setFilteredSuggestions(suggestions)
+        setShowSuggestions(true)
+    }
+    else if (value.trim().length > 2) {
       const filtered = suggestions.filter((suggestion) =>
         suggestion.toLowerCase().includes(value.toLowerCase().trim())
       )
