@@ -99,7 +99,6 @@ const Game = () => {
     dispatch(nextRound())
   }
 
-  //endless mode only ends once the library runs out, so the player needs a way back to the picker
   const handleChangeMode = () => {
     setInputValue('')
     setConfirmingModeChange(false)
@@ -107,14 +106,7 @@ const Game = () => {
   }
 
   const handleAbility = (ability: Ability) => {
-    const result = dispatch(activateAbility(ability))
-    if (ability === Ability.SkipRound) {
-      //the server only marks the round as done, the client still has to advance it
-      result
-        .unwrap()
-        .then(() => dispatch(nextRound()))
-        .catch(() => undefined)
-    }
+    dispatch(activateAbility(ability))
   }
 
   if (phase === GamePhase.Bootstrapping) {

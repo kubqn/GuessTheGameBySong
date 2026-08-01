@@ -17,7 +17,6 @@ type ResultMessageProps = {
   handleNextRound: () => void
 }
 
-/** Confetti per attempt the answer was found on - the later the guess, the smaller the party. */
 const CONFETTI_PIECES_BY_ATTEMPT = [200, 100, 25]
 const NO_CONFETTI = 0
 
@@ -58,12 +57,17 @@ const ResultMessage = ({ handleNextRound }: ResultMessageProps) => {
 
   return (
     <motion.div className='result-message' {...FADE_IN}>
-      {!isCorrect && (
+      {isCorrect === false && (
         <p>
           Wrong! Correct answer was: <span>{answer}</span>
         </p>
       )}
-      {isCorrect && (
+      {isCorrect === null && (
+        <p>
+          Round skipped. The answer was: <span>{answer}</span>
+        </p>
+      )}
+      {isCorrect === true && (
         <>
           <Confetti
             width={width}
