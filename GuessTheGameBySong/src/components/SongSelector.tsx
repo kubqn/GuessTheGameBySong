@@ -1,77 +1,66 @@
 import './css/songselector.css'
-import { useSelector, useDispatch } from 'react-redux'
-import { setActiveIndex, setIsPlaying } from '../store/actions'
+import { setActiveIndex } from '../store/actions'
 import { FaForward } from 'react-icons/fa'
 import { motion } from 'framer-motion'
-import { RootState } from '../store/store'
-import { PowerUpsInterface } from '../store/reducer'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import {
+  selectActiveIndex,
+  selectGameEnded,
+  selectIsBusy,
+  selectRoundCompleted,
+  selectServableSongIndexes,
+  selectTotalSongs,
+} from '../store/selectors'
+import { ICON_BUTTON_MOTION } from './others/motionPresets'
 
 interface SongSelectorProps {
   onSkip: () => void
 }
 
+const SKIP_ICON_SIZE = 17
+
 const SongSelector = ({ onSkip }: SongSelectorProps) => {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
 
-  const activeIndex = useSelector((state: RootState) => state.app.activeIndex)
-  const life = useSelector((state: RootState) => state.app.life)
+  const activeIndex = useAppSelector(selectActiveIndex)
+  const totalSongs = useAppSelector(selectTotalSongs)
+  const roundCompleted = useAppSelector(selectRoundCompleted)
+  const gameEnded = useAppSelector(selectGameEnded)
+  const servableIndexes = useAppSelector(selectServableSongIndexes)
+  const isBusy = useAppSelector(selectIsBusy)
 
-  const attemptNumber = useSelector(
-    (state: RootState) => state.app.attemptNumber
-  )
-  const isCorrectAnswer = useSelector(
-    (state: RootState) => state.app.isCorrectAnswer
-  )
-  const unlockedButtons = useSelector(
-    (state: RootState) => state.app.powerUps as PowerUpsInterface
-  ).unlockedButtons
-
-  const songButtons = [1, 2, 3]
-
-  const handleButtonClick = (index: number) => {
-    dispatch(setActiveIndex(index))
-    dispatch(setIsPlaying(false))
-  }
+  //the server decides how far the player got - the client only mirrors it
+  const isUnlocked = (index: number) =>
+    gameEnded || servableIndexes.includes(index)
 
   const buttonClass = (index: number) => {
-    let className = 'song-button'
     if (activeIndex === index) {
-      className = 'song-button active'
-    } else if (index >= attemptNumber && !isCorrectAnswer) {
-      className = 'song-button disabled'
+      return 'song-button active'
     }
-    return className
-  }
-
-  const handleDisabled = (index: number) => {
-    if (unlockedButtons || isCorrectAnswer) {
-      return false
-    } else if (index + 1 > attemptNumber) {
-      return true
-    }
+    return isUnlocked(index) ? 'song-button' : 'song-button disabled'
   }
 
   return (
     <div className='song-selector'>
-      {songButtons.map((button, index) => (
+      {Array.from({ length: totalSongs }, (_, index) => (
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          disabled={handleDisabled(index)}
+          {...ICON_BUTTON_MOTION}
+          disabled={!isUnlocked(index)}
           key={index}
-          onClick={() => handleButtonClick(index)}
+          onClick={() => dispatch(setActiveIndex(index))}
           className={buttonClass(index)}
         >
-          {button}
+          {index + 1}
         </motion.button>
       ))}
-      {attemptNumber < 4 && !isCorrectAnswer && life > 0 && (
+      {!roundCompleted && !gameEnded && (
         <motion.button
           className='skip-button'
           onClick={onSkip}
-          whileTap={{ scale: 0.9 }}
+          disabled={isBusy}
+          whileTap={ICON_BUTTON_MOTION.whileTap}
         >
-          <FaForward size={17} />
+          <FaForward size={SKIP_ICON_SIZE} />
           <div className='tooltip-text'>
             If you have no idea what song is this you can skip it instead of
             blindly guessing

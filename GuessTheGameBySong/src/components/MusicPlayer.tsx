@@ -1,40 +1,69 @@
 import './css/musicplayer.css'
 import { useState, useRef, useEffect } from 'react'
 import { FaVolumeUp } from 'react-icons/fa'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '../store/store'
-import { RoundInformation } from '../store/reducer'
 import { setIsPlaying } from '../store/actions'
+import { audioUrl } from '../api'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import {
+  selectActiveIndex,
+  selectGameEnded,
+  selectGameId,
+  selectIsPlaying,
+  selectRound,
+  selectServableSongIndexes,
+} from '../store/selectors'
+import { readStoredNumber, StorageKey, writeStored } from '../storage'
+import { clearPrefetchedAudio, prefetchAudioClips } from './others/audioPrefetch'
+
+const FALLBACK_CLIP_SECONDS = 20
+const SECONDS_PER_MINUTE = 60
+const SECONDS_PADDING = 2
+const PERCENT_MAX = 100
+const MAX_VOLUME = 1
+const VOLUME_ICON_SIZE = 40
+
+const formatTime = (time: number) => {
+  const minutes = Math.floor(time / SECONDS_PER_MINUTE)
+  const seconds = Math.floor(time % SECONDS_PER_MINUTE)
+    .toString()
+    .padStart(SECONDS_PADDING, '0')
+  return `${minutes}:${seconds}`
+}
 
 const MusicPlayer = () => {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
   const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(1)
-  const [volume, setVolume] = useState(
-    () => Number(localStorage.getItem('volume')) || 1
-  )
-  const [startDurations, setStartDurations] = useState<Map<number, number>>(
-    new Map()
+  const [duration, setDuration] = useState(FALLBACK_CLIP_SECONDS)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [volume, setVolume] = useState(() =>
+    readStoredNumber(StorageKey.Volume, MAX_VOLUME)
   )
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const progressBarRef = useRef<HTMLInputElement | null>(null)
   const volumeBarRef = useRef<HTMLInputElement | null>(null)
 
-  const activeIndex = useSelector((state: RootState) => state.app.activeIndex)
-  const index = useSelector((state: RootState) => state.app.index)
-  const round = useSelector((state: RootState) => state.app.round)
-  const isPlaying = useSelector((state: RootState) => state.app.isPlaying)
-  const attemptNumber = useSelector(
-    (state: RootState) => state.app.attemptNumber
-  )
+  const gameId = useAppSelector(selectGameId)
+  const activeIndex = useAppSelector(selectActiveIndex)
+  const round = useAppSelector(selectRound)
+  const isPlaying = useAppSelector(selectIsPlaying)
+  const gameEnded = useAppSelector(selectGameEnded)
+  const servableIndexes = useAppSelector(selectServableSongIndexes)
 
-  const isCorrectAnswer = useSelector(
-    (state: RootState) => state.app.isCorrectAnswer
-  )
-  const roundInformation = useSelector(
-    (state: RootState) => state.app.roundInformation as RoundInformation[]
-  )
+  const source = gameId ? audioUrl(gameId, activeIndex, round) : ''
+
+  useEffect(() => {
+    if (!gameId || gameEnded) {
+      clearPrefetchedAudio()
+      return
+    }
+    prefetchAudioClips(
+      servableIndexes.map((index) => audioUrl(gameId, index, round)),
+      source
+    )
+  }, [gameId, gameEnded, round, servableIndexes, source])
+
+  useEffect(() => clearPrefetchedAudio, [])
 
   useEffect(() => {
     if (audioRef.current) {
@@ -43,166 +72,82 @@ const MusicPlayer = () => {
   }, [volume])
 
   useEffect(() => {
-    if (audioRef.current) {
-      const songUrl =
-        roundInformation !== null
-          ? roundInformation[index ?? 0]?.songList[activeIndex ?? 0]
-          : ''
-      if (songUrl) {
-        audioRef.current.src = songUrl
-        audioRef.current.load()
-      } else {
-        audioRef.current.src = ''
-      }
-      setCurrentTime(0)
-      if (progressBarRef.current) {
-        progressBarRef.current.value = '0'
-      }
+    const audio = audioRef.current
+    if (!audio) {
+      return
     }
-  }, [activeIndex, round, roundInformation])
+    setLoadFailed(false)
+    setCurrentTime(0)
+    if (progressBarRef.current) {
+      progressBarRef.current.value = '0'
+    }
+    audio.src = source
+    if (source) {
+      audio.load()
+    }
+  }, [source])
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume
+    const audio = audioRef.current
+    if (!audio || !source) {
+      return
     }
-  }, [volume])
-
-  useEffect(() => {
-    if (audioRef.current) {
-      const songUrl = roundInformation[index]?.songList[activeIndex] || ''
-      audioRef.current.src = songUrl
-      audioRef.current.load()
-      setCurrentTime(0)
-      if (progressBarRef.current) {
-        progressBarRef.current.value = '0'
-      }
+    if (isPlaying) {
+      audio.play().catch(() => dispatch(setIsPlaying(false)))
+    } else {
+      audio.pause()
     }
-  }, [activeIndex, index, round, roundInformation])
-
-  useEffect(() => {
-    if (audioRef.current) {
-      if (
-        !isCorrectAnswer &&
-        attemptNumber !== 4 &&
-        audioRef.current.duration
-      ) {
-        if (!startDurations.has(activeIndex)) {
-          const randomStart = Math.random() * (audioRef.current.duration - 20)
-          setStartDurations(
-            new Map(startDurations.set(activeIndex, randomStart))
-          )
-          audioRef.current.currentTime = randomStart
-        } else {
-          audioRef.current.currentTime = startDurations.get(activeIndex) ?? 0
-        }
-        setDuration(20)
-      } else {
-        setDuration(audioRef.current.duration || 1)
-      }
-    }
-  }, [audioRef.current?.duration, isCorrectAnswer, activeIndex, startDurations])
-
-  const togglePlayPause = () => {
-    if (audioRef.current) {
-      const songUrl = audioRef.current.src
-      if (!songUrl) {
-        console.error('No audio source available')
-        return
-      }
-      if (isPlaying) {
-        audioRef.current.pause()
-      } else {
-        audioRef.current.play().catch((error) => {
-          console.error('Error playing audio:', error)
-          dispatch(setIsPlaying(false))
-        })
-      }
-      dispatch(setIsPlaying(!isPlaying))
-    }
-  }
+  }, [isPlaying, source, dispatch])
 
   const updateProgress = () => {
     if (audioRef.current && progressBarRef.current) {
       const current = audioRef.current.currentTime
-      const effectiveDuration =
-        isCorrectAnswer || attemptNumber === 4 ? duration : 20
-      const startOffset =
-        isCorrectAnswer || attemptNumber === 4
-          ? 0
-          : startDurations.get(activeIndex) ?? 0
-
-      if (
-        !isCorrectAnswer &&
-        attemptNumber !== 4 &&
-        current >= startOffset + 20
-      ) {
-        audioRef.current.pause()
-        dispatch(setIsPlaying(false))
-        audioRef.current.currentTime = startOffset
-      }
       progressBarRef.current.value = (
-        ((current - startOffset) / effectiveDuration) *
-        100
+        (current / duration) *
+        PERCENT_MAX
       ).toString()
       setCurrentTime(current)
     }
   }
 
   const onLoadedMetadata = () => {
-    if (audioRef.current) {
-      if (isCorrectAnswer || attemptNumber === 4) {
-        setDuration(audioRef.current.duration)
-      } else {
-        setDuration(20)
-        if (!startDurations.has(activeIndex)) {
-          const randomStart = Math.random() * (audioRef.current.duration - 20)
-          setStartDurations(
-            new Map(startDurations.set(activeIndex, randomStart))
-          )
-          audioRef.current.currentTime = randomStart
-        } else {
-          audioRef.current.currentTime = startDurations.get(activeIndex) ?? 0
-        }
-      }
+    if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
+      setDuration(audioRef.current.duration || FALLBACK_CLIP_SECONDS)
     }
   }
 
   const onChangeProgressBar = () => {
     if (audioRef.current && progressBarRef.current) {
       const newTime =
-        (progressBarRef.current.valueAsNumber / 100) *
-        (isCorrectAnswer || attemptNumber === 4 ? duration : 20)
-      audioRef.current.currentTime =
-        isCorrectAnswer || attemptNumber === 4
-          ? newTime
-          : (startDurations.get(activeIndex) ?? 0) + newTime
-      setCurrentTime(audioRef.current.currentTime)
+        (progressBarRef.current.valueAsNumber / PERCENT_MAX) * duration
+      audioRef.current.currentTime = newTime
+      setCurrentTime(newTime)
     }
   }
 
   const onChangeVolumeBar = () => {
     if (audioRef.current && volumeBarRef.current) {
-      const newVolume = volumeBarRef.current.valueAsNumber / 100
+      const newVolume = volumeBarRef.current.valueAsNumber / PERCENT_MAX
       audioRef.current.volume = newVolume
       setVolume(newVolume)
-      localStorage.setItem('volume', newVolume.toString())
+      writeStored(StorageKey.Volume, newVolume.toString())
     }
-  }
-
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60)
-    const seconds = Math.floor(time % 60)
-      .toString()
-      .padStart(2, '0')
-    return `${minutes}:${seconds}`
   }
 
   return (
     <div className='music-player'>
       <audio
         ref={audioRef}
+        preload='auto'
         onTimeUpdate={updateProgress}
         onLoadedMetadata={onLoadedMetadata}
+        onEnded={() => dispatch(setIsPlaying(false))}
+        onError={() => {
+          if (source) {
+            setLoadFailed(true)
+            dispatch(setIsPlaying(false))
+          }
+        }}
       />
       <input
         type='range'
@@ -211,37 +156,27 @@ const MusicPlayer = () => {
         onChange={onChangeProgressBar}
       />
       <div className='time'>
-        <span>
-          {isCorrectAnswer || attemptNumber === 4
-            ? formatTime(currentTime)
-            : `0:${Math.max(
-                0,
-                Math.floor(
-                  (currentTime - (startDurations.get(activeIndex) ?? 0)) % 60
-                )
-              )
-                .toString()
-                .padStart(2, '0')}`}
-        </span>
-        <span>
-          {isCorrectAnswer || attemptNumber === 4
-            ? formatTime(duration)
-            : '0:20'}
-        </span>
+        <span>{formatTime(currentTime)}</span>
+        <span>{formatTime(duration)}</span>
       </div>
-      <button className='button-common' onClick={togglePlayPause}>
+      <button
+        className='button-common'
+        disabled={!source || loadFailed}
+        onClick={() => dispatch(setIsPlaying(!isPlaying))}
+      >
         {isPlaying ? 'Pause' : 'Play'}
       </button>
+      {loadFailed && <div>Could not load this clip from the server.</div>}
       <div className='volume-control'>
-        <FaVolumeUp size={40} style={{ cursor: 'default' }} />
+        <FaVolumeUp size={VOLUME_ICON_SIZE} style={{ cursor: 'default' }} />
         <input
           type='range'
           ref={volumeBarRef}
-          defaultValue={volume * 100}
+          defaultValue={volume * PERCENT_MAX}
           onChange={onChangeVolumeBar}
         />
       </div>
-      <div>Volume: {Math.round(volume * 100)}%</div>
+      <div>Volume: {Math.round(volume * PERCENT_MAX)}%</div>
     </div>
   )
 }

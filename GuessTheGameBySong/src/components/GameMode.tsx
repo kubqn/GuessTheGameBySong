@@ -1,37 +1,50 @@
 import './css/gamemode.css'
-import {
-  motion,
-  useMotionValue,
-  useTransform,
-  useAnimationFrame,
-} from 'framer-motion'
+import { motion, useMotionValue, useTransform } from 'framer-motion'
+import { useEffect } from 'react'
 
 interface GameModeProps {
-  setIsEndless: (value: boolean) => void
-  setIsGameModeChosen: (value: boolean) => void
+  onChooseMode: (infinite: boolean) => void
+  isStarting: boolean
+  error: string | null
 }
 
-const GameMode = ({ setIsEndless, setIsGameModeChosen }: GameModeProps) => {
+/** The box tracks the cursor across this range: fully left to fully right. */
+const TILT_RANGE = 100
+const TILT_INPUT = [-TILT_RANGE, 0, TILT_RANGE]
+
+const BACKGROUNDS = [
+  'linear-gradient(180deg, rgb(0,0,0) 0%, rgb(255, 255, 255) 100%)',
+  'linear-gradient(180deg, #000000 0%, rgb(79, 78, 80) 100%)',
+  'linear-gradient(180deg, rgb(255, 255, 255) 0%, rgb(0, 0, 0) 100%)',
+]
+const ICON_COLORS = ['rgb(100, 100, 100)', 'rgb(0, 0, 0)', 'rgb(158, 158, 158)']
+
+const MODES = [
+  {
+    infinite: true,
+    label: 'ENDLESS MODE',
+    hint: '(infinity lives)',
+    side: 'left' as const,
+  },
+  {
+    infinite: false,
+    label: 'NORMAL MODE',
+    hint: '(power ups and 5 lives)',
+    side: 'right' as const,
+  },
+]
+
+const GameMode = ({ onChooseMode, isStarting, error }: GameModeProps) => {
   const x = useMotionValue(0)
-  const xInput = [-100, 0, 100]
-  const background = useTransform(x, xInput, [
-    'linear-gradient(180deg, rgb(0,0,0) 0%, rgb(255, 255, 255) 100%)',
-    'linear-gradient(180deg, #000000 0%, rgb(79, 78, 80) 100%)',
-    'linear-gradient(180deg, rgb(255, 255, 255) 0%, rgb(0, 0, 0) 100%)',
-  ])
-  const color = useTransform(x, xInput, [
-    'rgb(100, 100, 100)',
-    'rgb(0, 0, 0)',
-    'rgb(158, 158, 158)',
-  ])
+  const background = useTransform(x, TILT_INPUT, BACKGROUNDS)
+  const color = useTransform(x, TILT_INPUT, ICON_COLORS)
+  const leftPathLength = useTransform(x, [-TILT_RANGE, 0], [1, 0])
+  const rightPathLength = useTransform(x, [0, TILT_RANGE], [0, 1])
 
-  const width = window.innerWidth
-
-  useAnimationFrame(() => {
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      const mouseX = e.clientX
-      const normalizedX = (mouseX / width) * 200 - 100
-      x.set(normalizedX)
+      const ratio = e.clientX / window.innerWidth
+      x.set(ratio * TILT_RANGE * 2 - TILT_RANGE)
     }
 
     window.addEventListener('mousemove', handleMouseMove)
@@ -39,33 +52,24 @@ const GameMode = ({ setIsEndless, setIsGameModeChosen }: GameModeProps) => {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
     }
-  })
+  }, [x])
 
   return (
     <motion.div className='container' style={{ background }}>
-      <button
-        className='navigation-button game-mode'
-        style={{ left: '0px', color: 'white' }}
-        onClick={() => {
-          setIsEndless(true), setIsGameModeChosen(true)
-        }}
-      >
-        ENDLESS MODE
-        <p>(infinity lives)</p>
-      </button>
-
-      <button
-        className='navigation-button game-mode'
-        style={{ right: '0px', color: 'white' }}
-        onClick={() => {
-          setIsEndless(false), setIsGameModeChosen(true)
-        }}
-      >
-        NORMAL MODE
-        <p>(power ups and 5 lives)</p>
-      </button>
+      {MODES.map(({ infinite, label, hint, side }) => (
+        <button
+          key={label}
+          className='navigation-button game-mode'
+          style={{ [side]: '0px', color: 'white' }}
+          disabled={isStarting}
+          onClick={() => onChooseMode(infinite)}
+        >
+          {label}
+          <p>{hint}</p>
+        </button>
+      ))}
       <motion.div className='box' style={{ x }}>
-        <p className='gamemode-info'>MODE</p>
+        <p className='gamemode-info'>{isStarting ? 'LOADING' : 'MODE'}</p>
         <svg className='progress-icon'>
           <motion.path
             d='M 1 1 L 1 98 M 1 1 L 98 1 M 1 48.5 L 98 48.5 M 1 98 L 98 98'
@@ -73,7 +77,7 @@ const GameMode = ({ setIsEndless, setIsGameModeChosen }: GameModeProps) => {
             stroke={color}
             strokeWidth='2'
             strokeDasharray='0 1'
-            style={{ pathLength: useTransform(x, [-100, 0], [1, 0]) }}
+            style={{ pathLength: leftPathLength }}
           />
           <motion.path
             d='M 1 1 L 1 98 M 102 98 L 1 1 M 102 1 L 102 98'
@@ -81,10 +85,11 @@ const GameMode = ({ setIsEndless, setIsGameModeChosen }: GameModeProps) => {
             stroke={color}
             strokeWidth='2'
             strokeDasharray='0 1'
-            style={{ pathLength: useTransform(x, [0, 100], [0, 1]) }}
+            style={{ pathLength: rightPathLength }}
           />
         </svg>
       </motion.div>
+      {error && <p className='game-mode-error'>{error}</p>}
     </motion.div>
   )
 }

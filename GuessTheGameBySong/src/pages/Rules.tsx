@@ -1,31 +1,55 @@
 import { FaAngleLeft, FaAngleRight } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
+import type { ReactNode } from 'react'
 import { setAnimationType } from '../store/store'
+import { useAppDispatch } from '../store/hooks'
+import { PageAnimation } from '../store/types'
+
+const ARROW_SIZE = 100
+
+const NAV_LINKS: {
+  to: string
+  label: string
+  animation: PageAnimation
+  icon: ReactNode
+  side: 'left' | 'right'
+}[] = [
+  {
+    to: '/',
+    label: 'HOME',
+    animation: PageAnimation.Left,
+    icon: <FaAngleLeft size={ARROW_SIZE} color='white' />,
+    side: 'left',
+  },
+  {
+    to: '/game',
+    label: 'START',
+    animation: PageAnimation.Appear,
+    icon: <FaAngleRight size={ARROW_SIZE} color='white' />,
+    side: 'right',
+  },
+]
 
 const Rules = () => {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
   return (
     <div className='intro-box'>
       <div className='rule-box'>
-        <Link onClick={() => dispatch(setAnimationType('left'))} to='/'>
-          <button
-            className='navigation-button'
-            style={{ left: '0px', color: 'white' }}
+        {NAV_LINKS.map(({ to, label, animation, icon, side }) => (
+          <Link
+            key={to}
+            onClick={() => dispatch(setAnimationType(animation))}
+            to={to}
           >
-            <FaAngleLeft size={100} color='white' />
-            <span>HOME</span>
-          </button>
-        </Link>
-        <Link onClick={() => dispatch(setAnimationType('appear'))} to='/game'>
-          <button
-            className='navigation-button'
-            style={{ right: '0px', color: 'white' }}
-          >
-            <FaAngleRight size={100} color='white' />
-            <span>START</span>
-          </button>
-        </Link>
+            <button
+              className='navigation-button'
+              style={{ [side]: '0px', color: 'white' }}
+            >
+              {icon}
+              <span>{label}</span>
+            </button>
+          </Link>
+        ))}
         <h2 className='rules-header'>Rules:</h2>
         <ul className='rules-list'>
           <li>You get 1 point each time you correctly guess the game.</li>

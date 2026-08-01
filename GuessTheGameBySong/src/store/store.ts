@@ -1,15 +1,16 @@
 import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import reducer from './reducer'
+import { PageAnimation } from './types'
 
 const animationSlice = createSlice({
   name: 'animation',
-  initialState: 'right',
+  initialState: PageAnimation.Right as PageAnimation,
   reducers: {
-    setAnimationType: (_state, action: PayloadAction<string>) => {
-      return action.payload
-    },
+    setAnimationType: (_state, action: PayloadAction<PageAnimation>) =>
+      action.payload,
   },
 })
+
 const store = configureStore({
   reducer: {
     app: reducer,

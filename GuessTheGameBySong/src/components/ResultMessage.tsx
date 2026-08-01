@@ -1,72 +1,82 @@
-import { useSelector } from 'react-redux'
-import { RootState } from '../store/store'
 import Confetti from 'react-confetti'
 import useWindowDimensions from './others/windowSize'
 import { motion } from 'framer-motion'
 import './css/resultmessage.css'
+import { useAppSelector } from '../store/hooks'
+import {
+  selectCorrectAnswer,
+  selectCurrentSong,
+  selectGameEnded,
+  selectIsBusy,
+  selectIsCorrect,
+  selectRoundCompleted,
+} from '../store/selectors'
+import { FADE_IN } from './others/motionPresets'
 
 type ResultMessageProps = {
-  answer: string
   handleNextRound: () => void
 }
 
-const ResultMessage = ({ answer, handleNextRound }: ResultMessageProps) => {
-  const attemptNumber = useSelector(
-    (state: RootState) => state.app.attemptNumber
-  )
-  const life = useSelector((state: RootState) => state.app.life)
+/** Confetti per attempt the answer was found on - the later the guess, the smaller the party. */
+const CONFETTI_PIECES_BY_ATTEMPT = [200, 100, 25]
+const NO_CONFETTI = 0
 
-  const isCorrectAnswer = useSelector(
-    (state: RootState) => state.app.isCorrectAnswer
-  )
+const ResultMessage = ({ handleNextRound }: ResultMessageProps) => {
+  const roundCompleted = useAppSelector(selectRoundCompleted)
+  const gameEnded = useAppSelector(selectGameEnded)
+  const isCorrect = useAppSelector(selectIsCorrect)
+  const currentSong = useAppSelector(selectCurrentSong)
+  const answer = useAppSelector(selectCorrectAnswer)
+  const isBusy = useAppSelector(selectIsBusy)
 
   const { height, width } = useWindowDimensions()
 
+  if (!roundCompleted || gameEnded) {
+    return null
+  }
+
+  const attemptIndex = Math.min(
+    currentSong,
+    CONFETTI_PIECES_BY_ATTEMPT.length - 1
+  )
+  const confettiPieces = isCorrect
+    ? CONFETTI_PIECES_BY_ATTEMPT[attemptIndex]
+    : NO_CONFETTI
+
+  const successMessages = [
+    <p key='first'>
+      Too easy! <span>{answer}</span> was the correct answer!
+    </p>,
+    <p key='second'>
+      Not bad! <span>{answer}</span> stood no chance!
+    </p>,
+    <p key='third'>
+      Third time's a charm! In the end <span>{answer}</span> is what you were
+      looking for!
+    </p>,
+  ]
+
   return (
-    (isCorrectAnswer || attemptNumber === 4) && (
-      <motion.div
-        className='result-message'
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-      >
-        {attemptNumber === 4 && (
-          <p>
-            Wrong! Correct answer was: <span>{answer}</span>
-          </p>
-        )}
-        {isCorrectAnswer && attemptNumber === 1 && (
-          <>
-            <Confetti width={width} height={height} numberOfPieces={200} />
-            <p>
-              Too easy! <span>{answer}</span> was the correct answer!
-            </p>
-          </>
-        )}
-        {isCorrectAnswer && attemptNumber === 2 && (
-          <>
-            <Confetti width={width} height={height} numberOfPieces={100} />
-            <p>
-              Not bad! <span> {answer}</span> stood no chance!
-            </p>
-          </>
-        )}
-        {isCorrectAnswer && attemptNumber === 3 && (
-          <>
-            <Confetti width={width} height={height} numberOfPieces={25} />
-            <p>
-              Third time's a charm! In the end <span>{answer}</span> is what you
-              were looking for!
-            </p>
-          </>
-        )}
-        {life > 0 && (
-          <button className='button-common' onClick={handleNextRound}>
-            Next round
-          </button>
-        )}
-      </motion.div>
-    )
+    <motion.div className='result-message' {...FADE_IN}>
+      {!isCorrect && (
+        <p>
+          Wrong! Correct answer was: <span>{answer}</span>
+        </p>
+      )}
+      {isCorrect && (
+        <>
+          <Confetti
+            width={width}
+            height={height}
+            numberOfPieces={confettiPieces}
+          />
+          {successMessages[attemptIndex]}
+        </>
+      )}
+      <button className='button-common' disabled={isBusy} onClick={handleNextRound}>
+        Next round
+      </button>
+    </motion.div>
   )
 }
 
