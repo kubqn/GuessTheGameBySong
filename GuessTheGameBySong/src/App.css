@@ -315,3 +315,46 @@ button:hover .tooltip-text {
   z-index: -1;
   overflow: hidden;
 }
+
+.power-points-header {
+  margin-top: 20px;
+}
+
+.change-mode-slot {
+  display: grid;
+  margin-top: 15px;
+}
+
+.change-mode-slot > * {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+}
+
+.change-mode-slot > .is-hidden {
+  visibility: hidden;
+}
+
+.change-mode {
+  padding: 10px;
+  outline: 2px solid var(--bright);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.change-mode > p {
+  color: #ff4d4d;
+  margin-bottom: 5px;
+}
+
+.change-mode > button {
+  margin: 5px;
+}
+
+.server-error {
+  color: #b00020;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  margin: 10px auto;
+  padding: 8px 12px;
+  max-width: 90%;
+}

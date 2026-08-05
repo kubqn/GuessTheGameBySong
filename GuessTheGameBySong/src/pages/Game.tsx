@@ -2,193 +2,183 @@ import MusicPlayer from '../components/MusicPlayer'
 import Hearts from '../components/Hearts'
 import SongSelector from '../components/SongSelector'
 import InputGuess from '../components/InputGuess'
-import { useDispatch, useSelector } from 'react-redux'
-import { RootState } from '../store/store'
-import { PowerUpsInterface, RoundInformation } from '../store/reducer'
 import {
-  setActiveIndex,
-  setAttemptNumber,
-  setIsCorrectAnswer,
-  setLife,
-  setPoints,
-  setRound,
-  setRoundInformation,
-  setIsPlaying,
-  setIndex,
-  setPowerUps,
+  activateAbility,
+  clearError,
+  loadGameCatalog,
+  nextRound,
   resetState,
+  resumeGame,
+  skipSong,
+  startGame,
+  submitGuess,
 } from '../store/actions'
 import { motion } from 'framer-motion'
 import ResultMessage from '../components/ResultMessage'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import GameMode from '../components/GameMode'
 import GameOver from '../components/GameOver'
 import PowerUps from '../components/PowerUps'
-import shuffleArray from '../components/others/shuffle'
-import rounds from '../components/others/rounds'
+import { Ability } from '../api'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import {
+  selectError,
+  selectGameEnded,
+  selectGameId,
+  selectIsBusy,
+  selectIsInfinite,
+  selectRound,
+  selectRoundCompleted,
+} from '../store/selectors'
+import { GamePhase } from '../store/types'
+import { readStored, removeStored, StorageKey, writeStored } from '../storage'
+
+const ROUND_ENTRY_ANIMATION = {
+  initial: { opacity: 0, scale: 0.3 },
+  animate: { opacity: 1, scale: 1 },
+  transition: { duration: 1 },
+}
 
 const Game = () => {
-  const points = useSelector((state: RootState) => state.app.points)
-  const round = useSelector((state: RootState) => state.app.round)
-  const index = useSelector((state: RootState) => state.app.index)
-  const activeIndex = useSelector((state: RootState) => state.app.activeIndex)
-  const life = useSelector((state: RootState) => state.app.life)
+  const dispatch = useAppDispatch()
 
-  const roundInformation = useSelector(
-    (state: RootState) => state.app.roundInformation as RoundInformation[]
-  )
-  const attemptNumber = useSelector(
-    (state: RootState) => state.app.attemptNumber
-  )
-  const isCorrectAnswer = useSelector(
-    (state: RootState) => state.app.isCorrectAnswer
-  )
-  const powerUps = useSelector(
-    (state: RootState) => state.app.powerUps as PowerUpsInterface
-  )
+  const gameId = useAppSelector(selectGameId)
+  const round = useAppSelector(selectRound)
+  const isInfinite = useAppSelector(selectIsInfinite)
+  const roundCompleted = useAppSelector(selectRoundCompleted)
+  const gameEnded = useAppSelector(selectGameEnded)
+  const isBusy = useAppSelector(selectIsBusy)
+  const error = useAppSelector(selectError)
 
   const [inputValue, setInputValue] = useState('')
-  const [isEndless, setIsEndless] = useState<boolean | undefined>(undefined)
-  const [isGameModeChosen, setIsGameModeChosen] = useState(false)
-
-  const checkModeRef = useRef(false)
-  const dispatch = useDispatch()
+  const [bootstrapped, setBootstrapped] = useState(false)
+  const [confirmingModeChange, setConfirmingModeChange] = useState(false)
 
   useEffect(() => {
-    const storedIsEndless = localStorage.getItem('isEndless')
-    if (isEndless !== undefined) {
-      localStorage.setItem('isEndless', isEndless.toString())
-    }
+    dispatch(loadGameCatalog())
+  }, [dispatch])
 
-    if (checkModeRef.current && isEndless !== undefined) {
-      if (storedIsEndless !== isEndless.toString()) {
-        dispatch(resetState())
-      }
-    } else {
-      checkModeRef.current = true
+  //the server keeps games in memory, so a page reload can pick up where it left off
+  useEffect(() => {
+    const storedGameId = readStored(StorageKey.GameId)
+    if (!storedGameId) {
+      setBootstrapped(true)
+      return
     }
-  }, [isEndless])
+    dispatch(resumeGame(storedGameId)).finally(() => setBootstrapped(true))
+  }, [dispatch])
 
   useEffect(() => {
-    if (roundInformation[index + 1] === undefined) {
-      dispatch(setRoundInformation(shuffleArray(rounds)))
-      dispatch(setIndex(0))
-    }
-  }, [index])
-
-  const suggestions = rounds.map((games) => {
-    return games.answer
-  })
-
-  const handleCorrectGuess = () => {
-    if (attemptNumber === 1) {
-      dispatch(setPowerUps({ ...powerUps, points: powerUps.points + 1 }))
-    }
-    dispatch(setPoints(points + 1))
-    dispatch(setIsCorrectAnswer(true))
-    setInputValue('')
-  }
-
-  const handleIncorrectGuess = () => {
-    if (powerUps.shield.isActive) {
-      setInputValue('')
-      dispatch(
-        setPowerUps({
-          ...powerUps,
-          shield: {
-            isActive: powerUps.shield.left - 1 > 0,
-            left: powerUps.shield.left - 1,
-          },
-        })
-      )
+    if (gameId) {
+      writeStored(StorageKey.GameId, gameId)
     } else {
-      if (!isEndless) {
-        dispatch(setLife(life - 1))
-      }
-      dispatch(setActiveIndex(activeIndex + 1))
-      dispatch(setAttemptNumber(attemptNumber + 1))
-      setInputValue('')
-      dispatch(setIsPlaying(false))
+      removeStored(StorageKey.GameId)
     }
+  }, [gameId])
+
+  const phase = !bootstrapped
+    ? GamePhase.Bootstrapping
+    : gameId
+    ? GamePhase.Playing
+    : GamePhase.ChoosingMode
+
+  const handleGuess = (value: string) => {
+    const guess = value.trim()
+    if (!guess) {
+      return
+    }
+    dispatch(submitGuess(guess)).finally(() => setInputValue(''))
   }
 
   const handleSkip = () => {
-    if (attemptNumber === 4) {
-      dispatch(setAttemptNumber(1))
-      dispatch(setActiveIndex(1))
-    } else {
-      if (!isEndless) {
-        dispatch(setLife(life - 1))
-      }
-      dispatch(setAttemptNumber(attemptNumber + 1))
-      dispatch(setActiveIndex(attemptNumber))
-      dispatch(setIsPlaying(false))
-    }
+    dispatch(skipSong())
   }
 
   const handleNextRound = () => {
-    dispatch(setAttemptNumber(1))
-    dispatch(setActiveIndex(0))
-    dispatch(setRound(round + 1))
-    dispatch(setIsCorrectAnswer(false))
-    dispatch(setIsPlaying(false))
-    dispatch(setIndex(index + 1))
     setInputValue('')
-
-    dispatch(
-      setPowerUps({
-        ...powerUps,
-        shield: {
-          isActive: false,
-          left: 0,
-        },
-        unlockedButtons: false,
-      })
-    )
+    dispatch(nextRound())
   }
 
-  if (!isGameModeChosen) {
+  const handleChangeMode = () => {
+    setInputValue('')
+    setConfirmingModeChange(false)
+    dispatch(resetState())
+  }
+
+  const handleAbility = (ability: Ability) => {
+    dispatch(activateAbility(ability))
+  }
+
+  if (phase === GamePhase.Bootstrapping) {
     return (
-      <>
-        <GameMode
-          setIsEndless={setIsEndless}
-          setIsGameModeChosen={setIsGameModeChosen}
-        />
-      </>
+      <div className='intro-box'>
+        <div className='game-box'>
+          <h1>Loading...</h1>
+        </div>
+      </div>
     )
   }
+
+  if (phase === GamePhase.ChoosingMode) {
+    return (
+      <GameMode
+        onChooseMode={(infinite) => {
+          dispatch(clearError())
+          dispatch(startGame(infinite))
+        }}
+        isStarting={isBusy}
+        error={error}
+      />
+    )
+  }
+
   return (
     <div className='intro-box'>
-      <motion.div
-        className='game-box'
-        initial={{ opacity: 0, scale: 0.3 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1 }}
-        key={round}
-      >
+      <motion.div className='game-box' {...ROUND_ENTRY_ANIMATION} key={round}>
         <h1>Round {round}</h1>
         <div className='song-selector'>
           <SongSelector onSkip={handleSkip} />
-          {!isEndless && <Hearts />}
+          {!isInfinite && <Hearts />}
         </div>
         <MusicPlayer />
-        {attemptNumber < 4 && life > 0 && !isCorrectAnswer && (
+        {error && <p className='server-error'>{error}</p>}
+        {!roundCompleted && !gameEnded && (
           <InputGuess
-            suggestions={suggestions}
-            onCorrectGuess={handleCorrectGuess}
-            onIncorrectGuess={handleIncorrectGuess}
             inputValue={inputValue}
             setInputValue={setInputValue}
+            onSubmitGuess={handleGuess}
           />
         )}
-        <ResultMessage
-          answer={
-            roundInformation !== null ? roundInformation[index].answer : ''
-          }
-          handleNextRound={handleNextRound}
-        />
-        {life === 0 && <GameOver />}
-        {!isEndless && <PowerUps handleNextRound={handleNextRound} />}
+        <ResultMessage handleNextRound={handleNextRound} />
+        {gameEnded && <GameOver />}
+        {!isInfinite && <PowerUps onUseAbility={handleAbility} />}
+        {/*both states share one grid cell, so the frame keeps the size of the bigger one*/}
+        {!gameEnded && (
+          <div className='change-mode-slot'>
+            <button
+              className={`button-common change-mode-button${
+                confirmingModeChange ? ' is-hidden' : ''
+              }`}
+              onClick={() => setConfirmingModeChange(true)}
+            >
+              Change mode
+            </button>
+            <div
+              className={`change-mode${confirmingModeChange ? '' : ' is-hidden'}`}
+            >
+              <p>Give up this run and pick another mode?</p>
+              <button className='button-common' onClick={handleChangeMode}>
+                Yes
+              </button>
+              <button
+                className='button-common'
+                onClick={() => setConfirmingModeChange(false)}
+              >
+                No
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   )

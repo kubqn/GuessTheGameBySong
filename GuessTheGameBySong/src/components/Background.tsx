@@ -15,7 +15,11 @@ const images = Object.values(
     as: 'url',
   })
 )
-let shuffledImages = shuffle(images)
+const shuffledImages = shuffle(images)
+
+const MAX_PLACEMENT_ATTEMPTS = 300
+const RESIZE_DEBOUNCE_MS = 1000
+const RESIZE_THRESHOLD_PX = 100
 
 const generateRandomPosition = (
   width: number,
@@ -60,10 +64,9 @@ const Background = () => {
           return
         }
 
-        let position: any
+        let position: { top: number; left: number }
         let hasCollision
         let attempts = 0
-        const maxAttempts = 300
 
         do {
           position = generateRandomPosition(
@@ -76,7 +79,7 @@ const Background = () => {
             checkCollision(placedImg, { ...position, width, height, src })
           )
           attempts++
-          if (attempts > maxAttempts) {
+          if (attempts > MAX_PLACEMENT_ATTEMPTS) {
             return
           }
         } while (hasCollision)
@@ -100,7 +103,10 @@ const Background = () => {
         const widthDifference = Math.abs(newWidth - windowSize.width)
         const heightDifference = Math.abs(newHeight - windowSize.height)
 
-        if (widthDifference < 100 && heightDifference < 100) {
+        if (
+          widthDifference < RESIZE_THRESHOLD_PX &&
+          heightDifference < RESIZE_THRESHOLD_PX
+        ) {
           return
         }
 
@@ -109,7 +115,7 @@ const Background = () => {
           height: newHeight,
         })
         placeImages()
-      }, 1000)
+      }, RESIZE_DEBOUNCE_MS)
     }
 
     window.addEventListener('resize', handleResize)

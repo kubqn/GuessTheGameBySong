@@ -1,109 +1,156 @@
-import { createReducer } from '@reduxjs/toolkit'
 import {
-  setIsCorrectAnswer,
-  setLife,
-  setAttemptNumber,
-  setActiveIndex,
-  setIndex,
-  setRoundInformation,
-  setPoints,
-  setRound,
+  createReducer,
+  type PayloadAction,
+  type UnknownAction,
+} from '@reduxjs/toolkit'
+import {
+  clearError,
+  GAME_THUNK_PREFIX,
+  loadGameCatalog,
   resetState,
+  setActiveIndex,
   setIsPlaying,
-  setPowerUps,
 } from './actions'
-import shuffleArray from '../components/others/shuffle'
-import rounds from '../components/others/rounds'
+import type { GameState } from '../api'
+import { RequestStatus } from './types'
 
-interface AppState {
-  isCorrectAnswer: boolean
-  life: number
-  attemptNumber: number
-  activeIndex: number
-  index: number
-  roundInformation: object | null
-  points: number
+/** Placeholders until the first server response replaces them. */
+const DEFAULT_MAX_LIVES = 5
+const DEFAULT_TOTAL_SONGS = 3
+const FIRST_ROUND = 1
+const FIRST_SONG_INDEX = 0
+
+export interface AppState {
+  /** null until the server hands us a game. */
+  gameId: string | null
   round: number
-  isPlaying: boolean
-  powerUps: object
-}
-
-export interface RoundInformation {
-  songList: string[]
-  answer: string
-}
-
-export interface PowerUpsInterface {
   points: number
-  shield: {
-    isActive: boolean
-    left: number
-  }
-  unlockedButtons: boolean
+  bonusPoints: number
+  lives: number
+  maxLives: number
+  shieldLeft: number
+  allUnlocked: boolean
+  currentSong: number
+  totalSongs: number
+  activeIndex: number
+  roundCompleted: boolean
+  gameEnded: boolean
+  isCorrect: boolean | null
+  correctAnswer: string | null
+  responseText: string
+  isInfinite: boolean
+  isPlaying: boolean
+  status: RequestStatus
+  error: string | null
+  gameCatalog: string[]
 }
 
 const initialState: AppState = {
-  isCorrectAnswer: false,
-  life: 5,
-  attemptNumber: 1,
-  activeIndex: 0,
-  index: 0,
-  roundInformation: [
-    {
-      songList: undefined,
-      answer: undefined,
-    },
-  ],
+  gameId: null,
+  round: FIRST_ROUND,
   points: 0,
-  round: 1,
+  bonusPoints: 0,
+  lives: DEFAULT_MAX_LIVES,
+  maxLives: DEFAULT_MAX_LIVES,
+  shieldLeft: 0,
+  allUnlocked: false,
+  currentSong: FIRST_SONG_INDEX,
+  totalSongs: DEFAULT_TOTAL_SONGS,
+  activeIndex: FIRST_SONG_INDEX,
+  roundCompleted: false,
+  gameEnded: false,
+  isCorrect: null,
+  correctAnswer: null,
+  responseText: '',
+  isInfinite: false,
   isPlaying: false,
-  powerUps: {
-    points: 0,
-    shield: {
-      isActive: false,
-      left: 0,
-    },
-    unlockedButtons: false,
-  },
+  status: RequestStatus.Idle,
+  error: null,
+  gameCatalog: [],
 }
+
+const applyGameState = (state: AppState, payload: GameState) => {
+  const roundChanged = payload.current_round !== state.round
+  const songUnlocked = payload.current_song > state.currentSong
+
+  state.gameId = payload.game_id
+  state.round = payload.current_round
+  state.points = payload.current_points
+  state.bonusPoints = payload.current_bonus_points
+  state.lives = payload.lives_left
+  state.maxLives = payload.max_lives
+  state.shieldLeft = payload.shield_left
+  state.allUnlocked = payload.all_unlocked
+  state.currentSong = payload.current_song
+  state.totalSongs = payload.total_songs
+  state.roundCompleted = payload.round_completed
+  state.gameEnded = payload.game_ended
+  state.isCorrect = payload.is_correct
+  state.correctAnswer = payload.correct_answer
+  state.responseText = payload.response_text
+  state.isInfinite = payload.is_infinite
+
+  if (roundChanged || (songUnlocked && !payload.all_unlocked)) {
+    state.activeIndex = payload.current_song
+    state.isPlaying = false
+  }
+  if (payload.game_ended) {
+    state.isPlaying = false
+  }
+}
+
+//createAsyncThunk appends these to every thunk type it generates
+const THUNK_PENDING = '/pending'
+const THUNK_FULFILLED = '/fulfilled'
+const THUNK_REJECTED = '/rejected'
+
+const isGameAction = (action: UnknownAction, lifecycle: string) =>
+  action.type.startsWith(GAME_THUNK_PREFIX) && action.type.endsWith(lifecycle)
+
+const isGamePending = (action: UnknownAction) =>
+  isGameAction(action, THUNK_PENDING)
+
+const isGameFulfilled = (
+  action: UnknownAction
+): action is PayloadAction<GameState> =>
+  isGameAction(action, THUNK_FULFILLED)
+
+const isGameRejected = (
+  action: UnknownAction
+): action is PayloadAction<string | undefined> =>
+  isGameAction(action, THUNK_REJECTED)
 
 const reducer = createReducer(initialState, (builder) => {
   builder
-    .addCase(setIsCorrectAnswer, (state, action) => {
-      state.isCorrectAnswer = action.payload
-    })
-    .addCase(setLife, (state, action) => {
-      state.life = action.payload
-    })
-    .addCase(setAttemptNumber, (state, action) => {
-      state.attemptNumber = action.payload
-    })
     .addCase(setActiveIndex, (state, action) => {
       state.activeIndex = action.payload
-    })
-    .addCase(setIndex, (state, action) => {
-      state.index = action.payload
-    })
-    .addCase(setRoundInformation, (state, action) => {
-      state.roundInformation = action.payload
-    })
-    .addCase(setPoints, (state, action) => {
-      state.points = action.payload
-    })
-    .addCase(setRound, (state, action) => {
-      state.round = action.payload
-    })
-    .addCase(resetState, () => {
-      return {
-        ...initialState,
-        roundInformation: shuffleArray(rounds),
-      }
+      state.isPlaying = false
     })
     .addCase(setIsPlaying, (state, action) => {
       state.isPlaying = action.payload
     })
-    .addCase(setPowerUps, (state, action) => {
-      state.powerUps = action.payload
+    .addCase(clearError, (state) => {
+      state.error = null
+    })
+    .addCase(resetState, (state) => ({
+      ...initialState,
+      gameCatalog: state.gameCatalog,
+    }))
+    .addCase(loadGameCatalog.fulfilled, (state, action) => {
+      state.gameCatalog = action.payload
+    })
+    .addMatcher(isGamePending, (state) => {
+      state.status = RequestStatus.Loading
+      state.error = null
+    })
+    .addMatcher(isGameFulfilled, (state, action) => {
+      state.status = RequestStatus.Ready
+      state.error = null
+      applyGameState(state, action.payload)
+    })
+    .addMatcher(isGameRejected, (state, action) => {
+      state.status = RequestStatus.Error
+      state.error = action.payload ?? 'Request failed'
     })
 })
 

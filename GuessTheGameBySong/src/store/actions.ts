@@ -1,15 +1,94 @@
-import { createAction } from '@reduxjs/toolkit'
+import { createAction, createAsyncThunk } from '@reduxjs/toolkit'
+import {
+  abilityRequest,
+  gameCatalogRequest,
+  gameStateRequest,
+  guessRequest,
+  nextRoundRequest,
+  skipSongRequest,
+  startGameRequest,
+  type Ability,
+  type GameState,
+} from '../api'
+import type { RootState } from './store'
 
-export const setIsCorrectAnswer = createAction<boolean>('SET_IS_CORRECT_ANSWER')
-export const setLife = createAction<number>('SET_LIFE')
-export const setAttemptNumber = createAction<number>('SET_ATTEMPT_NUMBER')
+export const GAME_THUNK_PREFIX = 'game/'
+
+const FALLBACK_ERROR_MESSAGE = 'Request failed'
+const NO_ACTIVE_GAME_MESSAGE = 'No active game'
+
 export const setActiveIndex = createAction<number>('SET_ACTIVE_INDEX')
-export const setIndex = createAction<number>('SET_INDEX')
-export const setRoundInformation = createAction<Array<object> | null>(
-  'SET_ROUND_INFORMATION'
-)
-export const setPoints = createAction<number>('SET_POINTS')
-export const setRound = createAction<number>('SET_ROUND')
-export const resetState = createAction('resetState')
 export const setIsPlaying = createAction<boolean>('SET_IS_PLAYING')
-export const setPowerUps = createAction<object>('SET_POWER_UPS')
+export const clearError = createAction('CLEAR_ERROR')
+export const resetState = createAction('RESET_STATE')
+
+const toMessage = (error: unknown) =>
+  error instanceof Error ? error.message : FALLBACK_ERROR_MESSAGE
+
+const gameThunk = <Arg = void>(
+  type: string,
+  run: (gameId: string, arg: Arg) => Promise<GameState>
+) =>
+  createAsyncThunk<
+    GameState,
+    Arg,
+    { state: RootState; rejectValue: string }
+  >(`${GAME_THUNK_PREFIX}${type}`, async (arg, { getState, rejectWithValue }) => {
+    const gameId = getState().app.gameId
+    if (!gameId) {
+      return rejectWithValue(NO_ACTIVE_GAME_MESSAGE)
+    }
+    try {
+      return await run(gameId, arg)
+    } catch (error) {
+      return rejectWithValue(toMessage(error))
+    }
+  })
+
+export const startGame = createAsyncThunk<
+  GameState,
+  boolean,
+  { rejectValue: string }
+>(`${GAME_THUNK_PREFIX}start`, async (infinite, { rejectWithValue }) => {
+  try {
+    return await startGameRequest(infinite)
+  } catch (error) {
+    return rejectWithValue(toMessage(error))
+  }
+})
+
+export const resumeGame = createAsyncThunk<
+  GameState,
+  string,
+  { rejectValue: string }
+>(`${GAME_THUNK_PREFIX}resume`, async (gameId, { rejectWithValue }) => {
+  try {
+    return await gameStateRequest(gameId)
+  } catch (error) {
+    return rejectWithValue(toMessage(error))
+  }
+})
+
+export const submitGuess = gameThunk<string>('guess', (gameId, guess) =>
+  guessRequest(gameId, guess)
+)
+
+export const skipSong = gameThunk('skip', (gameId) => skipSongRequest(gameId))
+
+export const nextRound = gameThunk('next', (gameId) => nextRoundRequest(gameId))
+
+export const activateAbility = gameThunk<Ability>('ability', (gameId, ability) =>
+  abilityRequest(gameId, ability)
+)
+
+export const loadGameCatalog = createAsyncThunk<
+  string[],
+  void,
+  { rejectValue: string }
+>('catalog/load', async (_, { rejectWithValue }) => {
+  try {
+    return await gameCatalogRequest()
+  } catch (error) {
+    return rejectWithValue(toMessage(error))
+  }
+})

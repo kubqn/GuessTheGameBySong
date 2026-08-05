@@ -1,47 +1,45 @@
 import './css/inputguess.css'
 import { useState, ChangeEvent } from 'react'
-import { useSelector } from 'react-redux'
-import { RootState } from '../store/store'
-import { RoundInformation } from '../store/reducer'
 import { motion } from 'framer-motion'
+import { useAppSelector } from '../store/hooks'
+import { selectGameCatalog, selectIsBusy } from '../store/selectors'
 
 interface InputGuessProps {
-  suggestions: string[]
   inputValue: string
-  onCorrectGuess: () => void
-  onIncorrectGuess: () => void
   setInputValue: (value: string) => void
+  onSubmitGuess: (value: string) => void
 }
+
+const SHOW_ALL_QUERY = '!*'
+const MIN_QUERY_LENGTH = 3
+const SUGGESTIONS_FADE_SECONDS = 0.5
+
 const InputGuess = ({
-  suggestions,
   inputValue,
-  onCorrectGuess,
-  onIncorrectGuess,
   setInputValue,
+  onSubmitGuess,
 }: InputGuessProps) => {
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([])
-  const [showSuggestions, setShowSuggestions] = useState<boolean>(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
-  const index = useSelector((state: RootState) => state.app.index)
-
-  const roundInformation = useSelector(
-    (state: RootState) => state.app.roundInformation as RoundInformation[]
-  )
+  const suggestions = useAppSelector(selectGameCatalog)
+  const isBusy = useAppSelector(selectIsBusy)
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setInputValue(value)
 
-    if (value.trim() === '!*')
-    {
-        setFilteredSuggestions(suggestions)
-        setShowSuggestions(true)
-    }
-    else if (value.trim().length > 2) {
-      const filtered = suggestions.filter((suggestion) =>
-        suggestion.toLowerCase().includes(value.toLowerCase().trim())
+    const query = value.trim().toLowerCase()
+
+    if (query === SHOW_ALL_QUERY) {
+      setFilteredSuggestions(suggestions)
+      setShowSuggestions(true)
+    } else if (query.length >= MIN_QUERY_LENGTH) {
+      setFilteredSuggestions(
+        suggestions.filter((suggestion) =>
+          suggestion.toLowerCase().includes(query)
+        )
       )
-      setFilteredSuggestions(filtered)
       setShowSuggestions(true)
     } else {
       setShowSuggestions(false)
@@ -53,17 +51,9 @@ const InputGuess = ({
     setShowSuggestions(false)
   }
 
-  const handleSubmit = (value: string) => {
-    if (roundInformation[index]?.answer === value.trim()) {
-      onCorrectGuess()
-      setInputValue('')
-    } else if (
-      roundInformation[index]?.answer !== value.trim() &&
-      value.trim() !== ''
-    ) {
-      onIncorrectGuess()
-      setInputValue('')
-    }
+  const handleSubmit = () => {
+    setShowSuggestions(false)
+    onSubmitGuess(inputValue)
   }
 
   return (
@@ -74,6 +64,7 @@ const InputGuess = ({
           type='text'
           value={inputValue}
           onChange={handleChange}
+          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           placeholder='Type to search...'
         />
         {showSuggestions && inputValue && (
@@ -82,12 +73,12 @@ const InputGuess = ({
             initial='hidden'
             animate='visible'
             variants={{ visible: { opacity: 1 }, hidden: { opacity: 0 } }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: SUGGESTIONS_FADE_SECONDS }}
           >
-            {filteredSuggestions.map((suggestion, index) => (
+            {filteredSuggestions.map((suggestion) => (
               <li
                 className='guess-li'
-                key={index}
+                key={suggestion}
                 onClick={() => handleSuggestionClick(suggestion)}
               >
                 {suggestion}
@@ -98,7 +89,8 @@ const InputGuess = ({
         <button
           className='button-common'
           style={{ display: 'block' }}
-          onClick={() => handleSubmit(inputValue)}
+          disabled={isBusy}
+          onClick={handleSubmit}
         >
           Submit
         </button>

@@ -1,0 +1,18 @@
+[build]
+  base = "GuessTheGameBySong"
+  command = "npm run build && node scripts/gen-redirects.mjs"
+  publish = "dist"
+
+# The /api proxy and the SPA fallback are generated into dist/_redirects by
+# scripts/gen-redirects.mjs, because the proxy target is the Pi's address and it
+# is deliberately kept out of this repo. Set API_ORIGIN in the netlify site
+# settings instead - Site configuration > Environment variables:
+#
+#   API_ORIGIN = http://<public ip of the pi>:2137
+#
+# It has to be the address netlify's servers can reach from the internet, not the
+# 192.168.x.x one the Pi reports at home, and port 2137 has to be forwarded to
+# the Pi on the router.
+#
+# Redirects declared here would take precedence over the generated file, so the
+# rules deliberately live in one place only.

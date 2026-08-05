@@ -41,3 +41,12 @@
     position: relative;
   }
 }
+
+.game-mode-error {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  color: #ffb3b3;
+  text-align: center;
+}
