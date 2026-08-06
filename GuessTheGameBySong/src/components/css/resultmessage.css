@@ -2,8 +2,9 @@
   border: 3px solid var(--bright);
   padding: 10px;
   background-color: gray;
-  margin: 10px 0px;
-  max-width: 450px;
+  margin: 10px auto;
+  width: var(--panel-width);
+  max-width: 100%;
 }
 
 .result-message .button-common {
@@ -12,6 +13,7 @@
 
 .result-message > p {
   font-size: 0.75rem;
+  overflow-wrap: break-word;
 }
 
 .result-message > p > span {

@@ -17,6 +17,7 @@ import {
   selectLives,
   selectMaxLives,
   selectRoundCompleted,
+  selectSettings,
   selectShieldLeft,
 } from '../store/selectors'
 import { ICON_BUTTON_MOTION } from './others/motionPresets'
@@ -62,6 +63,10 @@ const PowerUps = ({ onUseAbility }: PowerUpProps) => {
   const roundCompleted = useAppSelector(selectRoundCompleted)
   const gameEnded = useAppSelector(selectGameEnded)
   const isBusy = useAppSelector(selectIsBusy)
+  const { reduceAnimations } = useAppSelector(selectSettings)
+
+  const pulse = (preset: { animate: object; transition: object }) =>
+    reduceAnimations ? {} : preset
 
   const abilitiesLocked =
     bonusPoints < ABILITY_COST || roundCompleted || gameEnded || isBusy
@@ -94,7 +99,7 @@ const PowerUps = ({ onUseAbility }: PowerUpProps) => {
       icon: <FaMusic size={ICON_SIZE} />,
       text: 'Unlocks all 3 songs for this round, without losing attempts and health',
       unavailable: allUnlocked,
-      animation: allUnlocked ? SPENT_PULSE : {},
+      animation: allUnlocked ? pulse(SPENT_PULSE) : {},
     },
     {
       ability: Ability.Shield,
@@ -104,7 +109,7 @@ const PowerUps = ({ onUseAbility }: PowerUpProps) => {
           ? `${shieldLeft} uses left`
           : `You will be protected in your next 3 guesses in this round (skip work normally), preventing both health loss and song unlock`,
       unavailable: shieldLeft > 0,
-      animation: shieldLeft > 0 ? ACTIVE_PULSE : {},
+      animation: shieldLeft > 0 ? pulse(ACTIVE_PULSE) : {},
     },
   ]
 

@@ -6,6 +6,8 @@ export interface SettingsState {
   franchiseHint: boolean
   showMissedGuesses: boolean
   showRoundCount: boolean
+  reduceAnimations: boolean
+  shuffleBackground: boolean
 }
 
 const defaultSettings: SettingsState = {
@@ -13,6 +15,8 @@ const defaultSettings: SettingsState = {
   franchiseHint: false,
   showMissedGuesses: false,
   showRoundCount: false,
+  reduceAnimations: false,
+  shuffleBackground: false,
 }
 
 const loadSettings = (): SettingsState => {

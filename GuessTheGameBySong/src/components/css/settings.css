@@ -1,8 +1,40 @@
+.settings-group {
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.settings-tabs {
+  display: flex;
+  width: fit-content;
+  margin: 1.5rem auto 1.25rem 2rem;
+  border: 2px solid var(--dark);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.settings-tab {
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 2px;
+  padding: 0.4rem 1.5rem;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+.settings-tab + .settings-tab {
+  border-left: 2px solid var(--dark);
+}
+
+.settings-tab.is-active {
+  background: var(--dark);
+  color: white;
+}
+
 .settings-list {
   list-style: none;
   padding: 0 2rem;
-  margin: 2rem auto 0;
-  max-width: 34rem;
+  margin: 0 auto;
   text-align: left;
 }
 

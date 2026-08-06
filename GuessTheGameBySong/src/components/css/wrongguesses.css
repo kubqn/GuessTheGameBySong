@@ -4,7 +4,8 @@
   border-radius: 5px;
   padding: 0.6rem 0.9rem;
   margin: 0.5rem auto;
-  max-width: 32rem;
+  width: var(--panel-width);
+  max-width: 100%;
 }
 
 .wrong-guesses-header {
@@ -29,6 +30,8 @@
   border-radius: 5px;
   padding: 0.15rem 0.5rem;
   font-size: 0.9rem;
+  max-width: 100%;
+  overflow-wrap: break-word;
   color: #ffdada;
   background: rgba(176, 48, 48, 0.25);
 }
