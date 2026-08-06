@@ -28,6 +28,12 @@ const OPTIONS: {
       'Colours a miss that came from the right series, so "Batman: Arkham City" tells you the answer is another Batman.',
     requires: 'showMissedGuesses',
   },
+  {
+    key: 'showRoundCount',
+    label: 'Show how far a run can go',
+    detail:
+      'Puts the size of the library next to the round number, so "Round 3 of 24" tells you how many rounds are left before the games run out.',
+  },
 ]
 
 const SettingsOptions = () => {
