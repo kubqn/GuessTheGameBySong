@@ -1,0 +1,41 @@
+.wrong-guesses {
+  outline: 2px solid var(--bright);
+  background: rgba(123, 126, 126, 0.678);
+  border-radius: 5px;
+  padding: 0.6rem 0.9rem;
+  margin: 0.5rem auto;
+  max-width: 32rem;
+}
+
+.wrong-guesses-header {
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.wrong-guesses-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0;
+  justify-content: center;
+  max-height: 6.5rem;
+  overflow-y: auto;
+}
+
+.wrong-guess {
+  border: 2px solid #b03030;
+  border-radius: 5px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.9rem;
+  color: #ffdada;
+  background: rgba(176, 48, 48, 0.25);
+}
+
+.wrong-guess.is-franchise {
+  border-color: #c9a227;
+  background: rgba(201, 162, 39, 0.35);
+  color: #3a3000;
+  font-weight: 600;
+}

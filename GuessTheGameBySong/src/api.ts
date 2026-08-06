@@ -20,6 +20,7 @@ export interface GameState {
   is_infinite: boolean
   game_ended: boolean
   correct_answer: string | null
+  correct_franchise: boolean | null
 }
 
 export enum Ability {

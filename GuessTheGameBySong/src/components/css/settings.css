@@ -1,0 +1,55 @@
+.settings-list {
+  list-style: none;
+  padding: 0 2rem;
+  margin: 2rem auto 0;
+  max-width: 34rem;
+  text-align: left;
+}
+
+.settings-list li + li {
+  margin-top: 1.75rem;
+}
+
+.settings-list li.is-sub {
+  margin-left: 2rem;
+  border-left: 2px solid var(--bright);
+  padding-left: 1rem;
+}
+
+.settings-list li.is-locked {
+  opacity: 0.45;
+}
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.settings-list li.is-locked .settings-option {
+  cursor: not-allowed;
+}
+
+.settings-option input {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: inherit;
+  flex-shrink: 0;
+}
+
+.settings-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.settings-detail {
+  margin: 0.35rem 0 0 2rem;
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.settings-list li.is-sub .settings-detail {
+  margin-left: 2rem;
+}
+

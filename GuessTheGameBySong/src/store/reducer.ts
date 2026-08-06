@@ -8,20 +8,22 @@ import {
   GAME_THUNK_PREFIX,
   loadGameCatalog,
   resetState,
+  restorePlayedGames,
+  restoreWrongGuesses,
   setActiveIndex,
   setIsPlaying,
+  startGame,
+  submitGuess,
 } from './actions'
 import type { GameState } from '../api'
 import { RequestStatus } from './types'
 
-/** Placeholders until the first server response replaces them. */
 const DEFAULT_MAX_LIVES = 5
 const DEFAULT_TOTAL_SONGS = 3
 const FIRST_ROUND = 1
 const FIRST_SONG_INDEX = 0
 
 export interface AppState {
-  /** null until the server hands us a game. */
   gameId: string | null
   round: number
   points: number
@@ -43,6 +45,13 @@ export interface AppState {
   status: RequestStatus
   error: string | null
   gameCatalog: string[]
+  playedGames: string[]
+  wrongGuesses: WrongGuess[]
+}
+
+export interface WrongGuess {
+  text: string
+  correctFranchise: boolean
 }
 
 const initialState: AppState = {
@@ -67,6 +76,8 @@ const initialState: AppState = {
   status: RequestStatus.Idle,
   error: null,
   gameCatalog: [],
+  playedGames: [],
+  wrongGuesses: [],
 }
 
 const applyGameState = (state: AppState, payload: GameState) => {
@@ -90,6 +101,14 @@ const applyGameState = (state: AppState, payload: GameState) => {
   state.responseText = payload.response_text
   state.isInfinite = payload.is_infinite
 
+  if (payload.correct_answer && !state.playedGames.includes(payload.correct_answer)) {
+    state.playedGames.push(payload.correct_answer)
+  }
+
+  if (roundChanged) {
+    state.wrongGuesses = []
+  }
+
   if (roundChanged || (songUnlocked && !payload.all_unlocked)) {
     state.activeIndex = payload.current_song
     state.isPlaying = false
@@ -99,7 +118,6 @@ const applyGameState = (state: AppState, payload: GameState) => {
   }
 }
 
-//createAsyncThunk appends these to every thunk type it generates
 const THUNK_PENDING = '/pending'
 const THUNK_FULFILLED = '/fulfilled'
 const THUNK_REJECTED = '/rejected'
@@ -138,6 +156,31 @@ const reducer = createReducer(initialState, (builder) => {
     }))
     .addCase(loadGameCatalog.fulfilled, (state, action) => {
       state.gameCatalog = action.payload
+    })
+    .addCase(restorePlayedGames, (state, action) => {
+      state.playedGames = action.payload
+    })
+    .addCase(restoreWrongGuesses, (state, action) => {
+      state.wrongGuesses = action.payload
+    })
+    .addCase(startGame.fulfilled, (state) => {
+      state.playedGames = []
+      state.wrongGuesses = []
+    })
+    .addCase(submitGuess.fulfilled, (state, action) => {
+      if (action.payload.is_correct !== false) {
+        return
+      }
+      const text = action.meta.arg.trim()
+      const alreadyListed = state.wrongGuesses.some(
+        (guess) => guess.text.toLowerCase() === text.toLowerCase()
+      )
+      if (!alreadyListed) {
+        state.wrongGuesses.push({
+          text,
+          correctFranchise: action.payload.correct_franchise ?? false,
+        })
+      }
     })
     .addMatcher(isGamePending, (state) => {
       state.status = RequestStatus.Loading

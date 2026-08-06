@@ -1,0 +1,31 @@
+.game-menu {
+  margin-top: 15px;
+}
+
+.game-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: 2px;
+  padding: 4px;
+}
+
+.game-menu-chevron {
+  display: inline-flex;
+}
+
+.game-menu-body {
+  overflow: hidden;
+}
+
+.game-menu-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 4px;
+}

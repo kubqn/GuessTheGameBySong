@@ -19,14 +19,24 @@ const Home = () => {
           </Link>
           to read the rules
         </p>
-        <Link to='/game'>
-          <button
-            onClick={() => dispatch(setAnimationType(PageAnimation.Appear))}
-            className='button-common'
-          >
-            Start
-          </button>
-        </Link>
+        <div className='home-actions'>
+          <Link to='/game'>
+            <button
+              onClick={() => dispatch(setAnimationType(PageAnimation.Appear))}
+              className='button-common'
+            >
+              Start
+            </button>
+          </Link>
+          <Link to='/settings'>
+            <button
+              onClick={() => dispatch(setAnimationType(PageAnimation.Left))}
+              className='button-common'
+            >
+              Settings
+            </button>
+          </Link>
+        </div>
       </div>
     </div>
   )
