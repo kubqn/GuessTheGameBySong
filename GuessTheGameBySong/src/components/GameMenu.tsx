@@ -35,6 +35,9 @@ const GameMenu = ({ onChangeMode, onReturnHome }: GameMenuProps) => {
     navigate('/settings')
   }
 
+  const hiddenUnless = (prompt: ExitPrompt) =>
+    exitPrompt === prompt ? '' : ' is-hidden'
+
   return (
     <div className='game-menu'>
       <button
@@ -61,8 +64,8 @@ const GameMenu = ({ onChangeMode, onReturnHome }: GameMenuProps) => {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: EXPAND_SECONDS }}
           >
-            {exitPrompt === 'none' && (
-              <div className='game-menu-actions'>
+            <div className='game-menu-panel'>
+              <div className={`game-menu-actions${hiddenUnless('none')}`}>
                 <button className='button-common' onClick={goToSettings}>
                   Go to Settings
                 </button>
@@ -79,10 +82,8 @@ const GameMenu = ({ onChangeMode, onReturnHome }: GameMenuProps) => {
                   Return to main page
                 </button>
               </div>
-            )}
 
-            {exitPrompt === 'mode' && (
-              <div className='change-mode'>
+              <div className={`change-mode${hiddenUnless('mode')}`}>
                 <p>Give up this run and pick another mode?</p>
                 <div className='change-mode-answers'>
                   <button className='button-common' onClick={onChangeMode}>
@@ -96,10 +97,8 @@ const GameMenu = ({ onChangeMode, onReturnHome }: GameMenuProps) => {
                   </button>
                 </div>
               </div>
-            )}
 
-            {exitPrompt === 'home' && (
-              <div className='change-mode'>
+              <div className={`change-mode${hiddenUnless('home')}`}>
                 <p>Go back to the main page?</p>
                 <div className='change-mode-answers'>
                   <button
@@ -122,7 +121,7 @@ const GameMenu = ({ onChangeMode, onReturnHome }: GameMenuProps) => {
                   Cancel
                 </button>
               </div>
-            )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

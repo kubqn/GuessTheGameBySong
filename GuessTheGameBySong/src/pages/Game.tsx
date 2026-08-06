@@ -27,6 +27,7 @@ import { Ability } from '../api'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
   selectError,
+  selectGameCatalog,
   selectGameEnded,
   selectGameId,
   selectIsBusy,
@@ -34,6 +35,7 @@ import {
   selectPlayedGames,
   selectRound,
   selectRoundCompleted,
+  selectSettings,
   selectWrongGuesses,
 } from '../store/selectors'
 import { GamePhase, PageAnimation } from '../store/types'
@@ -59,6 +61,8 @@ const Game = () => {
   const error = useAppSelector(selectError)
   const playedGames = useAppSelector(selectPlayedGames)
   const wrongGuesses = useAppSelector(selectWrongGuesses)
+  const totalGames = useAppSelector(selectGameCatalog).length
+  const { showRoundCount } = useAppSelector(selectSettings)
 
   const [inputValue, setInputValue] = useState('')
   const [bootstrapped, setBootstrapped] = useState(false)
@@ -204,7 +208,11 @@ const Game = () => {
   return (
     <div className='intro-box'>
       <motion.div className='game-box' {...ROUND_ENTRY_ANIMATION} key={round}>
-        <h1>Round {round}</h1>
+        {/*the server never repeats a game, so the library size is the run's ceiling*/}
+        <h1>
+          Round {round}
+          {showRoundCount && totalGames > 0 && ` of ${totalGames}`}
+        </h1>
         <div className='song-selector'>
           <SongSelector onSkip={handleSkip} />
           {!isInfinite && <Hearts />}

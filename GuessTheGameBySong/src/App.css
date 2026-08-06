@@ -45,6 +45,9 @@ h6 {
   --light-dark: #8d8e8e;
   --light: #a3a9aa;
   --bright: #bbbbbf;
+  /* every panel on the game screen is this wide, so swapping one for another
+     never changes how wide the game box has to be */
+  --panel-width: 380px;
 }
 
 body {
@@ -159,6 +162,7 @@ button:hover .tooltip-text {
   border: 3px solid var(--dark);
   background-color: var(--bright);
   overflow: auto;
+  scrollbar-gutter: stable;
   padding: 1rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 10px;

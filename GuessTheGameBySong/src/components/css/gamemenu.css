@@ -1,5 +1,7 @@
 .game-menu {
-  margin-top: 15px;
+  margin: 15px auto 0;
+  width: var(--panel-width);
+  max-width: 100%;
 }
 
 .game-menu-toggle {
@@ -21,6 +23,21 @@
 
 .game-menu-body {
   overflow: hidden;
+}
+
+.game-menu-panel {
+  display: grid;
+}
+
+.game-menu-panel > * {
+  grid-area: 1 / 1;
+  align-self: start;
+  width: 100%;
+}
+
+.game-menu-panel > .is-hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .game-menu-actions {

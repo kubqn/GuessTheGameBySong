@@ -5,12 +5,18 @@ export interface SettingsState {
   strikePlayedGames: boolean
   franchiseHint: boolean
   showMissedGuesses: boolean
+  showRoundCount: boolean
+  reduceAnimations: boolean
+  shuffleBackground: boolean
 }
 
 const defaultSettings: SettingsState = {
   strikePlayedGames: false,
   franchiseHint: false,
   showMissedGuesses: false,
+  showRoundCount: false,
+  reduceAnimations: false,
+  shuffleBackground: false,
 }
 
 const loadSettings = (): SettingsState => {
@@ -20,13 +26,15 @@ const loadSettings = (): SettingsState => {
   }
   try {
     const stored = JSON.parse(raw) as Partial<SettingsState>
-    return {
-      strikePlayedGames:
-        stored.strikePlayedGames ?? defaultSettings.strikePlayedGames,
-      franchiseHint: stored.franchiseHint ?? defaultSettings.franchiseHint,
-      showMissedGuesses:
-        stored.showMissedGuesses ?? defaultSettings.showMissedGuesses,
+    //storage can hold anything, so only known keys with a boolean survive
+    const merged = { ...defaultSettings }
+    for (const key of Object.keys(defaultSettings) as (keyof SettingsState)[]) {
+      const value = stored[key]
+      if (typeof value === 'boolean') {
+        merged[key] = value
+      }
     }
+    return merged
   } catch {
     return defaultSettings
   }

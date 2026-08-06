@@ -10,6 +10,7 @@ import {
   selectIsBusy,
   selectIsCorrect,
   selectRoundCompleted,
+  selectSettings,
 } from '../store/selectors'
 import { FADE_IN } from './others/motionPresets'
 
@@ -27,6 +28,7 @@ const ResultMessage = ({ handleNextRound }: ResultMessageProps) => {
   const currentSong = useAppSelector(selectCurrentSong)
   const answer = useAppSelector(selectCorrectAnswer)
   const isBusy = useAppSelector(selectIsBusy)
+  const { reduceAnimations } = useAppSelector(selectSettings)
 
   const { height, width } = useWindowDimensions()
 
@@ -69,11 +71,13 @@ const ResultMessage = ({ handleNextRound }: ResultMessageProps) => {
       )}
       {isCorrect === true && (
         <>
-          <Confetti
-            width={width}
-            height={height}
-            numberOfPieces={confettiPieces}
-          />
+          {!reduceAnimations && (
+            <Confetti
+              width={width}
+              height={height}
+              numberOfPieces={confettiPieces}
+            />
+          )}
           {successMessages[attemptIndex]}
         </>
       )}

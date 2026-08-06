@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { shuffle } from './others/shuffle'
+import { useAppSelector } from '../store/hooks'
+import { selectRound, selectSettings } from '../store/selectors'
 
 interface ImageData {
   src: string
@@ -9,13 +11,12 @@ interface ImageData {
   left: number
 }
 
-const images = Object.values(
+const allImages = Object.values(
   import.meta.glob('../images/*.{png,jpg,jpeg,PNG,JPEG}', {
     eager: true,
     as: 'url',
   })
 )
-const shuffledImages = shuffle(images)
 
 const MAX_PLACEMENT_ATTEMPTS = 300
 const RESIZE_DEBOUNCE_MS = 1000
@@ -48,15 +49,23 @@ const Background = () => {
     height: window.innerHeight,
   })
 
+  const round = useAppSelector(selectRound)
+  const { shuffleBackground } = useAppSelector(selectSettings)
+  const runIdRef = useRef(0)
+
   const placeImages = () => {
+    const runId = ++runIdRef.current
     const containerWidth = window.innerWidth
     const containerHeight = window.innerHeight
     const placedImages: ImageData[] = []
 
-    shuffledImages.forEach((src) => {
+    shuffle(allImages).forEach((src) => {
       const img = new Image()
       img.src = src
       img.onload = () => {
+        if (runId !== runIdRef.current) {
+          return
+        }
         const width = img.width
         const height = img.height
 
@@ -125,6 +134,18 @@ const Background = () => {
       window.removeEventListener('resize', handleResize)
     }
   }, [windowSize])
+
+  const firstRunRef = useRef(true)
+  useEffect(() => {
+    if (firstRunRef.current) {
+      firstRunRef.current = false
+      return
+    }
+    if (shuffleBackground) {
+      placeImages()
+    }
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round, shuffleBackground])
 
   return (
     <div
