@@ -8,6 +8,8 @@ import {
   loadGameCatalog,
   nextRound,
   resetState,
+  restorePlayedGames,
+  restoreWrongGuesses,
   resumeGame,
   skipSong,
   startGame,
@@ -19,6 +21,8 @@ import { useState, useEffect } from 'react'
 import GameMode from '../components/GameMode'
 import GameOver from '../components/GameOver'
 import PowerUps from '../components/PowerUps'
+import WrongGuesses from '../components/WrongGuesses'
+import GameMenu from '../components/GameMenu'
 import { Ability } from '../api'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
@@ -27,10 +31,14 @@ import {
   selectGameId,
   selectIsBusy,
   selectIsInfinite,
+  selectPlayedGames,
   selectRound,
   selectRoundCompleted,
+  selectWrongGuesses,
 } from '../store/selectors'
-import { GamePhase } from '../store/types'
+import { GamePhase, PageAnimation } from '../store/types'
+import { setAnimationType } from '../store/store'
+import { useNavigate } from 'react-router-dom'
 import { readStored, removeStored, StorageKey, writeStored } from '../storage'
 
 const ROUND_ENTRY_ANIMATION = {
@@ -49,24 +57,77 @@ const Game = () => {
   const gameEnded = useAppSelector(selectGameEnded)
   const isBusy = useAppSelector(selectIsBusy)
   const error = useAppSelector(selectError)
+  const playedGames = useAppSelector(selectPlayedGames)
+  const wrongGuesses = useAppSelector(selectWrongGuesses)
 
   const [inputValue, setInputValue] = useState('')
   const [bootstrapped, setBootstrapped] = useState(false)
-  const [confirmingModeChange, setConfirmingModeChange] = useState(false)
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     dispatch(loadGameCatalog())
   }, [dispatch])
 
-  //the server keeps games in memory, so a page reload can pick up where it left off
   useEffect(() => {
     const storedGameId = readStored(StorageKey.GameId)
     if (!storedGameId) {
       setBootstrapped(true)
       return
     }
-    dispatch(resumeGame(storedGameId)).finally(() => setBootstrapped(true))
+
+    const stored = readStored(StorageKey.PlayedGames)
+    if (stored) {
+      try {
+        const { gameId: storedFor, games } = JSON.parse(stored)
+        if (storedFor === storedGameId && Array.isArray(games)) {
+          dispatch(restorePlayedGames(games))
+        }
+      } catch {
+        removeStored(StorageKey.PlayedGames)
+      }
+    }
+    dispatch(resumeGame(storedGameId))
+      .unwrap()
+      .then(({ current_round }) => {
+        const storedGuesses = readStored(StorageKey.WrongGuesses)
+        if (!storedGuesses) {
+          return
+        }
+        const { gameId: storedFor, round, guesses } = JSON.parse(storedGuesses)
+        if (
+          storedFor === storedGameId &&
+          round === current_round &&
+          Array.isArray(guesses)
+        ) {
+          dispatch(restoreWrongGuesses(guesses))
+        }
+      })
+      .catch(() => removeStored(StorageKey.WrongGuesses))
+      .finally(() => setBootstrapped(true))
   }, [dispatch])
+
+  useEffect(() => {
+    if (gameId) {
+      writeStored(
+        StorageKey.PlayedGames,
+        JSON.stringify({ gameId, games: playedGames })
+      )
+    } else {
+      removeStored(StorageKey.PlayedGames)
+    }
+  }, [gameId, playedGames])
+
+  useEffect(() => {
+    if (gameId) {
+      writeStored(
+        StorageKey.WrongGuesses,
+        JSON.stringify({ gameId, round, guesses: wrongGuesses })
+      )
+    } else {
+      removeStored(StorageKey.WrongGuesses)
+    }
+  }, [gameId, round, wrongGuesses])
 
   useEffect(() => {
     if (gameId) {
@@ -101,8 +162,16 @@ const Game = () => {
 
   const handleChangeMode = () => {
     setInputValue('')
-    setConfirmingModeChange(false)
     dispatch(resetState())
+  }
+
+  const handleReturnHome = (abandonRun: boolean) => {
+    if (abandonRun) {
+      setInputValue('')
+      dispatch(resetState())
+    }
+    dispatch(setAnimationType(PageAnimation.Left))
+    navigate('/')
   }
 
   const handleAbility = (ability: Ability) => {
@@ -149,35 +218,15 @@ const Game = () => {
             onSubmitGuess={handleGuess}
           />
         )}
+        <WrongGuesses />
         <ResultMessage handleNextRound={handleNextRound} />
         {gameEnded && <GameOver />}
         {!isInfinite && <PowerUps onUseAbility={handleAbility} />}
-        {/*both states share one grid cell, so the frame keeps the size of the bigger one*/}
         {!gameEnded && (
-          <div className='change-mode-slot'>
-            <button
-              className={`button-common change-mode-button${
-                confirmingModeChange ? ' is-hidden' : ''
-              }`}
-              onClick={() => setConfirmingModeChange(true)}
-            >
-              Change mode
-            </button>
-            <div
-              className={`change-mode${confirmingModeChange ? '' : ' is-hidden'}`}
-            >
-              <p>Give up this run and pick another mode?</p>
-              <button className='button-common' onClick={handleChangeMode}>
-                Yes
-              </button>
-              <button
-                className='button-common'
-                onClick={() => setConfirmingModeChange(false)}
-              >
-                No
-              </button>
-            </div>
-          </div>
+          <GameMenu
+            onChangeMode={handleChangeMode}
+            onReturnHome={handleReturnHome}
+          />
         )}
       </motion.div>
     </div>

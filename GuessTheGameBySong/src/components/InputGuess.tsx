@@ -2,7 +2,12 @@ import './css/inputguess.css'
 import { useState, ChangeEvent } from 'react'
 import { motion } from 'framer-motion'
 import { useAppSelector } from '../store/hooks'
-import { selectGameCatalog, selectIsBusy } from '../store/selectors'
+import {
+  selectGameCatalog,
+  selectIsBusy,
+  selectPlayedGames,
+  selectSettings,
+} from '../store/selectors'
 
 interface InputGuessProps {
   inputValue: string
@@ -24,6 +29,11 @@ const InputGuess = ({
 
   const suggestions = useAppSelector(selectGameCatalog)
   const isBusy = useAppSelector(selectIsBusy)
+  const playedGames = useAppSelector(selectPlayedGames)
+  const { strikePlayedGames } = useAppSelector(selectSettings)
+
+  const isSpent = (suggestion: string) =>
+    strikePlayedGames && playedGames.includes(suggestion)
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -77,7 +87,7 @@ const InputGuess = ({
           >
             {filteredSuggestions.map((suggestion) => (
               <li
-                className='guess-li'
+                className={`guess-li${isSpent(suggestion) ? ' is-spent' : ''}`}
                 key={suggestion}
                 onClick={() => handleSuggestionClick(suggestion)}
               >

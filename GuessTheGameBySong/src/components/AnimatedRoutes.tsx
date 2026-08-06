@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import Home from '../pages/Home'
 import Rules from '../pages/Rules'
+import Settings from '../pages/Settings'
 import Game from '../pages/Game'
 import { useAppSelector } from '../store/hooks'
 import { selectAnimationType } from '../store/selectors'
@@ -32,6 +33,7 @@ const pageVariants = {
 const ROUTES: { path: string; element: ReactNode }[] = [
   { path: '/', element: <Home /> },
   { path: '/rules', element: <Rules /> },
+  { path: '/settings', element: <Settings /> },
   { path: '/game', element: <Game /> },
 ]
 
