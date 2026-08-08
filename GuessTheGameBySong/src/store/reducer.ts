@@ -47,6 +47,7 @@ export interface AppState {
   gameCatalog: string[]
   playedGames: string[]
   wrongGuesses: WrongGuess[]
+  pendingRequestId: string | null
 }
 
 export interface WrongGuess {
@@ -78,6 +79,7 @@ const initialState: AppState = {
   gameCatalog: [],
   playedGames: [],
   wrongGuesses: [],
+  pendingRequestId: null,
 }
 
 const applyGameState = (state: AppState, payload: GameState) => {
@@ -122,20 +124,24 @@ const THUNK_PENDING = '/pending'
 const THUNK_FULFILLED = '/fulfilled'
 const THUNK_REJECTED = '/rejected'
 
+type RequestMeta = { requestId: string }
+
 const isGameAction = (action: UnknownAction, lifecycle: string) =>
   action.type.startsWith(GAME_THUNK_PREFIX) && action.type.endsWith(lifecycle)
 
-const isGamePending = (action: UnknownAction) =>
+const isGamePending = (
+  action: UnknownAction
+): action is PayloadAction<undefined, string, RequestMeta> =>
   isGameAction(action, THUNK_PENDING)
 
 const isGameFulfilled = (
   action: UnknownAction
-): action is PayloadAction<GameState> =>
+): action is PayloadAction<GameState, string, RequestMeta> =>
   isGameAction(action, THUNK_FULFILLED)
 
 const isGameRejected = (
   action: UnknownAction
-): action is PayloadAction<string | undefined> =>
+): action is PayloadAction<string | undefined, string, RequestMeta> =>
   isGameAction(action, THUNK_REJECTED)
 
 const reducer = createReducer(initialState, (builder) => {
@@ -168,7 +174,10 @@ const reducer = createReducer(initialState, (builder) => {
       state.wrongGuesses = []
     })
     .addCase(submitGuess.fulfilled, (state, action) => {
-      if (action.payload.is_correct !== false) {
+      if (
+        action.meta.requestId !== state.pendingRequestId ||
+        action.payload.is_correct !== false
+      ) {
         return
       }
       const text = action.meta.arg.trim()
@@ -182,16 +191,25 @@ const reducer = createReducer(initialState, (builder) => {
         })
       }
     })
-    .addMatcher(isGamePending, (state) => {
+    .addMatcher(isGamePending, (state, action) => {
+      state.pendingRequestId = action.meta.requestId
       state.status = RequestStatus.Loading
       state.error = null
     })
     .addMatcher(isGameFulfilled, (state, action) => {
+      if (action.meta.requestId !== state.pendingRequestId) {
+        return
+      }
+      state.pendingRequestId = null
       state.status = RequestStatus.Ready
       state.error = null
       applyGameState(state, action.payload)
     })
     .addMatcher(isGameRejected, (state, action) => {
+      if (action.meta.requestId !== state.pendingRequestId) {
+        return
+      }
+      state.pendingRequestId = null
       state.status = RequestStatus.Error
       state.error = action.payload ?? 'Request failed'
     })

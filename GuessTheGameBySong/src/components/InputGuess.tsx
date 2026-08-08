@@ -62,6 +62,9 @@ const InputGuess = ({
   }
 
   const handleSubmit = () => {
+    if (isBusy) {
+      return
+    }
     setShowSuggestions(false)
     onSubmitGuess(inputValue)
   }

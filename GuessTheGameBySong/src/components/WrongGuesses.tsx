@@ -20,9 +20,6 @@ const WrongGuesses = () => {
           <li
             key={text}
             className={`wrong-guess${correctFranchise ? ' is-franchise' : ''}`}
-            title={
-              correctFranchise ? 'Right franchise, wrong game' : 'Not the game'
-            }
           >
             {text}
           </li>
