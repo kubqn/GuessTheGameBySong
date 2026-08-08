@@ -1,5 +1,6 @@
 const DEFAULT_API_URL = 'http://localhost:2137'
 const NETWORK_ERROR_STATUS = 0
+const REQUEST_TIMEOUT_MS = 15000
 
 export const API_URL = import.meta.env.VITE_API_URL ?? DEFAULT_API_URL
 
@@ -56,13 +57,21 @@ export class ApiError extends Error {
   }
 }
 
+const isTimeout = (error: unknown) =>
+  error instanceof DOMException && error.name === 'TimeoutError'
+
 const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
   let response: Response
   try {
-    response = await fetch(`${API_URL}${path}`, init)
-  } catch {
+    response = await fetch(`${API_URL}${path}`, {
+      ...init,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    })
+  } catch (error) {
     throw new ApiError(
-      `Cannot reach the game server at ${API_URL}`,
+      isTimeout(error)
+        ? `The game server took longer than ${REQUEST_TIMEOUT_MS / 1000}s to answer`
+        : `Cannot reach the game server at ${API_URL}`,
       NETWORK_ERROR_STATUS
     )
   }
