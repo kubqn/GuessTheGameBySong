@@ -23,6 +23,10 @@ export const selectIsInfinite = (state: RootState) => state.app.isInfinite
 export const selectIsPlaying = (state: RootState) => state.app.isPlaying
 export const selectError = (state: RootState) => state.app.error
 export const selectGameCatalog = (state: RootState) => state.app.gameCatalog
+export const selectAbilityCatalog = (state: RootState) =>
+  state.app.abilityCatalog
+export const selectAbilityCooldowns = (state: RootState) =>
+  state.app.abilityCooldowns
 export const selectPlayedGames = (state: RootState) => state.app.playedGames
 export const selectWrongGuesses = (state: RootState) => state.app.wrongGuesses
 export const selectAnimationType = (state: RootState) => state.animation

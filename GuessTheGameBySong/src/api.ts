@@ -22,6 +22,7 @@ export interface GameState {
   game_ended: boolean
   correct_answer: string | null
   correct_franchise: boolean | null
+  ability_cooldowns: Record<string, number> | null
 }
 
 export enum Ability {
@@ -30,6 +31,15 @@ export enum Ability {
   SkipRound = 'skip_round',
   ExtraLife = 'extra_life',
 }
+
+export interface AbilityInfo {
+  cost: number
+  cooldown: number
+  description: string
+  pretty_name: string
+}
+
+export type AbilityCatalog = Partial<Record<Ability, AbilityInfo>>
 
 export enum GameAction {
   Start = 'start',
@@ -126,8 +136,16 @@ export const abilityRequest = (gameId: string, ability: Ability) =>
 export const gameStateRequest = (gameId: string) =>
   request<GameState>(`/game_state/${gameId}`)
 
+export const abilityCatalogRequest = () =>
+  request<AbilityCatalog>('/abilities_data')
+
 export const gameCatalogRequest = () =>
   request<{ games: string[] }>('/autofill').then((data) => data.games)
 
-export const audioUrl = (gameId: string, songNumber: number, round: number) =>
-  `${API_URL}/get_audio/${gameId}/${songNumber}?round=${round}`
+export const audioUrl = (
+  gameId: string,
+  songNumber: number,
+  round: number,
+  full = false
+) =>
+  `${API_URL}/${full ? 'get_full_audio' : 'get_audio'}/${gameId}/${songNumber}?round=${round}`

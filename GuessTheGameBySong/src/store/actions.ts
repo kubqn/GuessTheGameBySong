@@ -1,5 +1,6 @@
 import { createAction, createAsyncThunk } from '@reduxjs/toolkit'
 import {
+  abilityCatalogRequest,
   abilityRequest,
   gameCatalogRequest,
   gameStateRequest,
@@ -8,6 +9,7 @@ import {
   skipSongRequest,
   startGameRequest,
   type Ability,
+  type AbilityCatalog,
   type GameState,
 } from '../api'
 import type { RootState } from './store'
@@ -93,6 +95,18 @@ export const loadGameCatalog = createAsyncThunk<
 >('catalog/load', async (_, { rejectWithValue }) => {
   try {
     return await gameCatalogRequest()
+  } catch (error) {
+    return rejectWithValue(toMessage(error))
+  }
+})
+
+export const loadAbilityCatalog = createAsyncThunk<
+  AbilityCatalog,
+  void,
+  { rejectValue: string }
+>('catalog/abilities', async (_, { rejectWithValue }) => {
+  try {
+    return await abilityCatalogRequest()
   } catch (error) {
     return rejectWithValue(toMessage(error))
   }
