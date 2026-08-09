@@ -23,6 +23,7 @@ export interface GameState {
   correct_answer: string | null
   correct_franchise: boolean | null
   ability_cooldowns: Record<string, number> | null
+  clip_times: number[] | null
 }
 
 export enum Ability {
