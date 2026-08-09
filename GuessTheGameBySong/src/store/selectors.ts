@@ -27,6 +27,7 @@ export const selectAbilityCatalog = (state: RootState) =>
   state.catalog.abilities
 export const selectAbilityCooldowns = (state: RootState) =>
   state.app.abilityCooldowns
+export const selectClipTimes = (state: RootState) => state.app.clipTimes
 export const selectPlayedGames = (state: RootState) => state.app.playedGames
 export const selectWrongGuesses = (state: RootState) => state.app.wrongGuesses
 export const selectAnimationType = (state: RootState) => state.animation

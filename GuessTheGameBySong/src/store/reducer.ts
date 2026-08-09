@@ -47,6 +47,7 @@ export interface AppState {
   wrongGuesses: WrongGuess[]
   pendingRequestId: string | null
   abilityCooldowns: Record<string, number>
+  clipTimes: number[]
 }
 
 export interface WrongGuess {
@@ -79,6 +80,7 @@ const initialState: AppState = {
   wrongGuesses: [],
   pendingRequestId: null,
   abilityCooldowns: {},
+  clipTimes: [],
 }
 
 const applyGameState = (state: AppState, payload: GameState) => {
@@ -102,6 +104,7 @@ const applyGameState = (state: AppState, payload: GameState) => {
   state.responseText = payload.response_text
   state.isInfinite = payload.is_infinite
   state.abilityCooldowns = payload.ability_cooldowns ?? {}
+  state.clipTimes = payload.clip_times ?? []
 
   if (payload.correct_answer && !state.playedGames.includes(payload.correct_answer)) {
     state.playedGames.push(payload.correct_answer)

@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
   selectActiveIndex,
   selectAllUnlocked,
+  selectClipTimes,
   selectGameEnded,
   selectGameId,
   selectIsPlaying,
@@ -21,6 +22,8 @@ const FALLBACK_CLIP_SECONDS = 20
 const SECONDS_PER_MINUTE = 60
 const SECONDS_PADDING = 2
 const PERCENT_MAX = 100
+const MS_PER_SECOND = 1000
+const SEEK_SAFETY_SECONDS = 1
 const MAX_VOLUME = 1
 const VOLUME_ICON_SIZE = 40
 
@@ -53,9 +56,23 @@ const MusicPlayer = () => {
   const servableIndexes = useAppSelector(selectServableSongIndexes)
   const allUnlocked = useAppSelector(selectAllUnlocked)
   const roundCompleted = useAppSelector(selectRoundCompleted)
+  const clipTimes = useAppSelector(selectClipTimes)
 
   const playFull = allUnlocked || roundCompleted
   const source = gameId ? audioUrl(gameId, activeIndex, round, playFull) : ''
+
+  const carryOverRef = useRef<{ index: number; time: number } | null>(null)
+  const wasPlayingFull = useRef(playFull)
+
+  useEffect(() => {
+    if (playFull && !wasPlayingFull.current) {
+      carryOverRef.current = {
+        index: activeIndex,
+        time: audioRef.current?.currentTime ?? 0,
+      }
+    }
+    wasPlayingFull.current = playFull
+  }, [playFull, activeIndex])
 
   useEffect(() => {
     if (!gameId || gameEnded) {
@@ -117,8 +134,30 @@ const MusicPlayer = () => {
   }
 
   const onLoadedMetadata = () => {
-    if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
-      setDuration(audioRef.current.duration || FALLBACK_CLIP_SECONDS)
+    const audio = audioRef.current
+    if (!audio || !Number.isFinite(audio.duration)) {
+      return
+    }
+    setDuration(audio.duration || FALLBACK_CLIP_SECONDS)
+
+    if (!playFull) {
+      return
+    }
+    const carried =
+      carryOverRef.current?.index === activeIndex
+        ? carryOverRef.current.time
+        : 0
+    carryOverRef.current = null
+
+    const clipStart = clipTimes[activeIndex]
+    if (!Number.isFinite(clipStart)) {
+      return
+    }
+
+    const target = clipStart / MS_PER_SECOND + carried
+    if (target > 0 && target < audio.duration - SEEK_SAFETY_SECONDS) {
+      audio.currentTime = target
+      setCurrentTime(target)
     }
   }
 
