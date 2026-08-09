@@ -6,6 +6,7 @@ import {
 import {
   clearError,
   GAME_THUNK_PREFIX,
+  loadAbilityCatalog,
   loadGameCatalog,
   resetState,
   restorePlayedGames,
@@ -15,7 +16,7 @@ import {
   startGame,
   submitGuess,
 } from './actions'
-import type { GameState } from '../api'
+import type { AbilityCatalog, GameState } from '../api'
 import { RequestStatus } from './types'
 
 const DEFAULT_MAX_LIVES = 5
@@ -48,6 +49,8 @@ export interface AppState {
   playedGames: string[]
   wrongGuesses: WrongGuess[]
   pendingRequestId: string | null
+  abilityCatalog: AbilityCatalog
+  abilityCooldowns: Record<string, number>
 }
 
 export interface WrongGuess {
@@ -80,6 +83,8 @@ const initialState: AppState = {
   playedGames: [],
   wrongGuesses: [],
   pendingRequestId: null,
+  abilityCatalog: {},
+  abilityCooldowns: {},
 }
 
 const applyGameState = (state: AppState, payload: GameState) => {
@@ -102,6 +107,7 @@ const applyGameState = (state: AppState, payload: GameState) => {
   state.correctAnswer = payload.correct_answer
   state.responseText = payload.response_text
   state.isInfinite = payload.is_infinite
+  state.abilityCooldowns = payload.ability_cooldowns ?? {}
 
   if (payload.correct_answer && !state.playedGames.includes(payload.correct_answer)) {
     state.playedGames.push(payload.correct_answer)
@@ -162,6 +168,9 @@ const reducer = createReducer(initialState, (builder) => {
     }))
     .addCase(loadGameCatalog.fulfilled, (state, action) => {
       state.gameCatalog = action.payload
+    })
+    .addCase(loadAbilityCatalog.fulfilled, (state, action) => {
+      state.abilityCatalog = action.payload
     })
     .addCase(restorePlayedGames, (state, action) => {
       state.playedGames = action.payload

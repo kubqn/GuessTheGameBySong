@@ -1,0 +1,38 @@
+.power-ups {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.power-up {
+  position: relative;
+  height: auto;
+}
+
+.power-up-cost {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.power-up .tooltip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: var(--panel-width);
+  max-width: 80vw;
+  margin-left: 0;
+  margin-top: 0;
+  left: 50%;
+  bottom: 105%;
+  transform: translateX(-50%);
+  padding: 8px;
+  text-align: left;
+  white-space: normal;
+}
+
+.power-up .tooltip-text strong {
+  color: var(--bright);
+}

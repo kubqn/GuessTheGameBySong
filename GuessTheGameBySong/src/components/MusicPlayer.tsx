@@ -6,6 +6,7 @@ import { audioUrl } from '../api'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
   selectActiveIndex,
+  selectAllUnlocked,
   selectGameEnded,
   selectGameId,
   selectIsPlaying,
@@ -49,11 +50,12 @@ const MusicPlayer = () => {
   const isPlaying = useAppSelector(selectIsPlaying)
   const gameEnded = useAppSelector(selectGameEnded)
   const servableIndexes = useAppSelector(selectServableSongIndexes)
+  const allUnlocked = useAppSelector(selectAllUnlocked)
 
-  const source = gameId ? audioUrl(gameId, activeIndex, round) : ''
+  const source = gameId ? audioUrl(gameId, activeIndex, round, allUnlocked) : ''
 
   useEffect(() => {
-    if (!gameId || gameEnded) {
+    if (!gameId || gameEnded || allUnlocked) {
       clearPrefetchedAudio()
       return
     }
@@ -61,7 +63,7 @@ const MusicPlayer = () => {
       servableIndexes.map((index) => audioUrl(gameId, index, round)),
       source
     )
-  }, [gameId, gameEnded, round, servableIndexes, source])
+  }, [gameId, gameEnded, allUnlocked, round, servableIndexes, source])
 
   useEffect(() => clearPrefetchedAudio, [])
 

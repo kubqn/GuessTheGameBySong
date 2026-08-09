@@ -5,6 +5,7 @@ import InputGuess from '../components/InputGuess'
 import {
   activateAbility,
   clearError,
+  loadAbilityCatalog,
   loadGameCatalog,
   nextRound,
   resetState,
@@ -71,6 +72,7 @@ const Game = () => {
 
   useEffect(() => {
     dispatch(loadGameCatalog())
+    dispatch(loadAbilityCatalog())
   }, [dispatch])
 
   useEffect(() => {
