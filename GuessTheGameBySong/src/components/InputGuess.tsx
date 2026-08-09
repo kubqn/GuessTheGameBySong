@@ -72,33 +72,35 @@ const InputGuess = ({
   return (
     <div className='flex-container'>
       <div>
-        <input
-          className='guess-input'
-          type='text'
-          value={inputValue}
-          onChange={handleChange}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder='Type to search...'
-        />
-        {showSuggestions && inputValue && (
-          <motion.ul
-            className='guess-ul'
-            initial='hidden'
-            animate='visible'
-            variants={{ visible: { opacity: 1 }, hidden: { opacity: 0 } }}
-            transition={{ duration: SUGGESTIONS_FADE_SECONDS }}
-          >
-            {filteredSuggestions.map((suggestion) => (
-              <li
-                className={`guess-li${isSpent(suggestion) ? ' is-spent' : ''}`}
-                key={suggestion}
-                onClick={() => handleSuggestionClick(suggestion)}
-              >
-                {suggestion}
-              </li>
-            ))}
-          </motion.ul>
-        )}
+        <div className='guess-field'>
+          <input
+            className='guess-input'
+            type='text'
+            value={inputValue}
+            onChange={handleChange}
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+            placeholder='Type to search...'
+          />
+          {showSuggestions && inputValue && (
+            <motion.ul
+              className='guess-ul'
+              initial='hidden'
+              animate='visible'
+              variants={{ visible: { opacity: 1 }, hidden: { opacity: 0 } }}
+              transition={{ duration: SUGGESTIONS_FADE_SECONDS }}
+            >
+              {filteredSuggestions.map((suggestion) => (
+                <li
+                  className={`guess-li${isSpent(suggestion) ? ' is-spent' : ''}`}
+                  key={suggestion}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </motion.ul>
+          )}
+        </div>
         <button
           className='button-common'
           style={{ display: 'block' }}

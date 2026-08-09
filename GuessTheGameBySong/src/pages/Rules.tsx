@@ -1,19 +1,10 @@
-import { useEffect } from 'react'
 import PageNav from '../components/PageNav'
-import { loadAbilityCatalog } from '../store/actions'
-import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { useAppSelector } from '../store/hooks'
 import { selectAbilityCatalog } from '../store/selectors'
 
 const Rules = () => {
-  const dispatch = useAppDispatch()
   const catalog = useAppSelector(selectAbilityCatalog)
   const abilities = Object.values(catalog)
-
-  useEffect(() => {
-    if (abilities.length === 0) {
-      dispatch(loadAbilityCatalog())
-    }
-  }, [dispatch, abilities.length])
 
   return (
     <div className='intro-box'>

@@ -1,5 +1,6 @@
 import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit'
 import reducer from './reducer'
+import catalogReducer from './catalog'
 import settingsReducer from './settings'
 import { PageAnimation } from './types'
 
@@ -17,6 +18,7 @@ const store = configureStore({
     app: reducer,
     animation: animationSlice.reducer,
     settings: settingsReducer,
+    catalog: catalogReducer,
   },
 })
 

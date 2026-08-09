@@ -11,6 +11,7 @@ import {
   selectGameId,
   selectIsPlaying,
   selectRound,
+  selectRoundCompleted,
   selectServableSongIndexes,
 } from '../store/selectors'
 import { readStoredNumber, StorageKey, writeStored } from '../storage'
@@ -51,19 +52,22 @@ const MusicPlayer = () => {
   const gameEnded = useAppSelector(selectGameEnded)
   const servableIndexes = useAppSelector(selectServableSongIndexes)
   const allUnlocked = useAppSelector(selectAllUnlocked)
+  const roundCompleted = useAppSelector(selectRoundCompleted)
 
-  const source = gameId ? audioUrl(gameId, activeIndex, round, allUnlocked) : ''
+  const playFull = allUnlocked || roundCompleted
+  const source = gameId ? audioUrl(gameId, activeIndex, round, playFull) : ''
 
   useEffect(() => {
-    if (!gameId || gameEnded || allUnlocked) {
+    if (!gameId || gameEnded) {
       clearPrefetchedAudio()
       return
     }
-    prefetchAudioClips(
-      servableIndexes.map((index) => audioUrl(gameId, index, round)),
-      source
+    const clips = servableIndexes.map((index) => audioUrl(gameId, index, round))
+    const full = servableIndexes.map((index) =>
+      audioUrl(gameId, index, round, true)
     )
-  }, [gameId, gameEnded, allUnlocked, round, servableIndexes, source])
+    prefetchAudioClips([...clips, ...full], source)
+  }, [gameId, gameEnded, round, servableIndexes, source])
 
   useEffect(() => clearPrefetchedAudio, [])
 

@@ -6,8 +6,6 @@ import {
 import {
   clearError,
   GAME_THUNK_PREFIX,
-  loadAbilityCatalog,
-  loadGameCatalog,
   resetState,
   restorePlayedGames,
   restoreWrongGuesses,
@@ -16,7 +14,7 @@ import {
   startGame,
   submitGuess,
 } from './actions'
-import type { AbilityCatalog, GameState } from '../api'
+import type { GameState } from '../api'
 import { RequestStatus } from './types'
 
 const DEFAULT_MAX_LIVES = 5
@@ -45,11 +43,9 @@ export interface AppState {
   isPlaying: boolean
   status: RequestStatus
   error: string | null
-  gameCatalog: string[]
   playedGames: string[]
   wrongGuesses: WrongGuess[]
   pendingRequestId: string | null
-  abilityCatalog: AbilityCatalog
   abilityCooldowns: Record<string, number>
 }
 
@@ -79,11 +75,9 @@ const initialState: AppState = {
   isPlaying: false,
   status: RequestStatus.Idle,
   error: null,
-  gameCatalog: [],
   playedGames: [],
   wrongGuesses: [],
   pendingRequestId: null,
-  abilityCatalog: {},
   abilityCooldowns: {},
 }
 
@@ -162,16 +156,7 @@ const reducer = createReducer(initialState, (builder) => {
     .addCase(clearError, (state) => {
       state.error = null
     })
-    .addCase(resetState, (state) => ({
-      ...initialState,
-      gameCatalog: state.gameCatalog,
-    }))
-    .addCase(loadGameCatalog.fulfilled, (state, action) => {
-      state.gameCatalog = action.payload
-    })
-    .addCase(loadAbilityCatalog.fulfilled, (state, action) => {
-      state.abilityCatalog = action.payload
-    })
+    .addCase(resetState, () => initialState)
     .addCase(restorePlayedGames, (state, action) => {
       state.playedGames = action.payload
     })
