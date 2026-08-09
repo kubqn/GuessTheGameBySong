@@ -22,9 +22,9 @@ export const selectResponseText = (state: RootState) => state.app.responseText
 export const selectIsInfinite = (state: RootState) => state.app.isInfinite
 export const selectIsPlaying = (state: RootState) => state.app.isPlaying
 export const selectError = (state: RootState) => state.app.error
-export const selectGameCatalog = (state: RootState) => state.app.gameCatalog
+export const selectGameCatalog = (state: RootState) => state.catalog.games
 export const selectAbilityCatalog = (state: RootState) =>
-  state.app.abilityCatalog
+  state.catalog.abilities
 export const selectAbilityCooldowns = (state: RootState) =>
   state.app.abilityCooldowns
 export const selectPlayedGames = (state: RootState) => state.app.playedGames

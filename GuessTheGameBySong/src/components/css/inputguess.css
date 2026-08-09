@@ -1,8 +1,13 @@
+.guess-field {
+  position: relative;
+  margin: 20px 0px 10px 0px;
+}
+
 .guess-input {
   padding: 8px;
   width: var(--panel-width);
   max-width: 100%;
-  margin: 20px 0px 10px 0px;
+  margin: 0;
   border: 2px solid var(--dark);
 }
 
@@ -12,13 +17,16 @@
 .guess-ul {
   list-style-type: none;
   padding: 0;
-  max-height: 100px;
+  max-height: 160px;
   overflow: auto;
   border: 1px solid var(--dark);
   background-color: var(--light);
-  max-width: var(--panel-width);
-  margin-bottom: 10px;
-  margin-top: -10px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  z-index: 5;
 }
 
 .guess-li {

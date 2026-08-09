@@ -62,6 +62,12 @@
   margin-top: 8px;
 }
 
+.power-ups-loading {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: var(--bright);
+}
+
 .power-up .tooltip-text {
   display: flex;
   flex-direction: column;

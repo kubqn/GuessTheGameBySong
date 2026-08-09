@@ -56,6 +56,7 @@ const SPENT_PULSE = {
 
 type PowerUpProps = {
   onUseAbility: (ability: Ability) => void
+  fullSongsLoading: boolean
 }
 
 const ORDER: Ability[] = [
@@ -65,7 +66,7 @@ const ORDER: Ability[] = [
   Ability.Shield,
 ]
 
-const PowerUps = ({ onUseAbility }: PowerUpProps) => {
+const PowerUps = ({ onUseAbility, fullSongsLoading }: PowerUpProps) => {
   const bonusPoints = useAppSelector(selectBonusPoints)
   const lives = useAppSelector(selectLives)
   const maxLives = useAppSelector(selectMaxLives)
@@ -186,6 +187,9 @@ const PowerUps = ({ onUseAbility }: PowerUpProps) => {
           )
         })}
       </div>
+      {fullSongsLoading && (
+        <div className='power-ups-loading'>Full songs still downloading...</div>
+      )}
       <div className='power-ups-hint'>Hover icon for detail</div>
     </>
   )

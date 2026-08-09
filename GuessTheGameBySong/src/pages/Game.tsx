@@ -5,8 +5,6 @@ import InputGuess from '../components/InputGuess'
 import {
   activateAbility,
   clearError,
-  loadAbilityCatalog,
-  loadGameCatalog,
   nextRound,
   resetState,
   restorePlayedGames,
@@ -26,7 +24,9 @@ import WrongGuesses from '../components/WrongGuesses'
 import GameMenu from '../components/GameMenu'
 import { Ability } from '../api'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { watchPrefetchProgress } from '../components/others/audioPrefetch'
 import {
+  selectAllUnlocked,
   selectError,
   selectGameCatalog,
   selectGameEnded,
@@ -63,17 +63,19 @@ const Game = () => {
   const playedGames = useAppSelector(selectPlayedGames)
   const wrongGuesses = useAppSelector(selectWrongGuesses)
   const totalGames = useAppSelector(selectGameCatalog).length
+  const allUnlocked = useAppSelector(selectAllUnlocked)
   const { showRoundCount } = useAppSelector(selectSettings)
 
   const [inputValue, setInputValue] = useState('')
   const [bootstrapped, setBootstrapped] = useState(false)
-
-  const navigate = useNavigate()
+  const [clipsLoading, setClipsLoading] = useState(0)
 
   useEffect(() => {
-    dispatch(loadGameCatalog())
-    dispatch(loadAbilityCatalog())
-  }, [dispatch])
+    watchPrefetchProgress(setClipsLoading)
+    return () => watchPrefetchProgress(null)
+  }, [])
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     const storedGameId = readStored(StorageKey.GameId)
@@ -231,7 +233,14 @@ const Game = () => {
         <WrongGuesses />
         <ResultMessage handleNextRound={handleNextRound} />
         {gameEnded && <GameOver />}
-        {!isInfinite && <PowerUps onUseAbility={handleAbility} />}
+        {!isInfinite && (
+          <PowerUps
+            onUseAbility={handleAbility}
+            fullSongsLoading={
+              (allUnlocked || roundCompleted) && clipsLoading > 0
+            }
+          />
+        )}
         {!gameEnded && (
           <GameMenu
             onChangeMode={handleChangeMode}
