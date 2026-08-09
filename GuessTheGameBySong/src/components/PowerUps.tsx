@@ -6,6 +6,7 @@ import {
   FaShieldHeart,
   FaMusic,
 } from 'react-icons/fa6'
+import { CiBadgeDollar, CiTimer } from 'react-icons/ci'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { Ability } from '../api'
@@ -26,6 +27,8 @@ import {
 import { ICON_BUTTON_MOTION } from './others/motionPresets'
 
 const ICON_SIZE = 50
+const META_ICON_SIZE = 18
+const COOLDOWN_ICON_SIZE = 16
 const PULSE_SECONDS = 3
 const IDLE_ICON = { color: '#000000', opacity: 1, scale: 1 }
 
@@ -138,43 +141,52 @@ const PowerUps = ({ onUseAbility }: PowerUpProps) => {
           const animation = animationFor(ability)
 
           return (
-            <motion.button
-              initial={IDLE_ICON}
-              animate={animation.animate}
-              transition={animation.transition}
-              {...ICON_BUTTON_MOTION}
-              key={ability}
-              disabled={disabled}
-              className='button-common power-up'
-              style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
-              onClick={() => onUseAbility(ability)}
-            >
-              {iconFor(ability, affordable)}
-              <span className='power-up-cost'>
-                {info.cost}
-                {cooldownLeft > 0 && ` · ${cooldownLeft}`}
+            <div className='power-up-slot' key={ability}>
+              <motion.button
+                initial={IDLE_ICON}
+                animate={animation.animate}
+                transition={animation.transition}
+                {...(disabled ? {} : ICON_BUTTON_MOTION)}
+                disabled={disabled}
+                className='button-common power-up'
+                style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+                onClick={() => onUseAbility(ability)}
+              >
+                {iconFor(ability, affordable)}
+                <span className='power-up-cost'>
+                  <CiBadgeDollar size={META_ICON_SIZE} />
+                  {info.cost}
+                </span>
+                <div className='tooltip-text'>
+                  <strong>
+                    {info.pretty_name} — {info.cost}{' '}
+                    {info.cost === 1 ? 'point' : 'points'}
+                  </strong>
+                  <span>{info.description}</span>
+                  {info.cooldown > 0 && (
+                    <span className={cooldownLeft > 0 ? 'is-cooling' : ''}>
+                      {cooldownLeft > 0
+                        ? `On cooldown for ${cooldownLeft} more ${
+                            cooldownLeft === 1 ? 'round' : 'rounds'
+                          }`
+                        : `Cooldown: ${info.cooldown} rounds`}
+                    </span>
+                  )}
+                </div>
+              </motion.button>
+              <span
+                className={`power-up-cooldown${
+                  cooldownLeft > 0 ? '' : ' is-idle'
+                }`}
+              >
+                <CiTimer size={COOLDOWN_ICON_SIZE} />
+                {cooldownLeft}
               </span>
-              <div className='tooltip-text'>
-                <strong>
-                  {info.pretty_name} — {info.cost}{' '}
-                  {info.cost === 1 ? 'point' : 'points'}
-                </strong>
-                <span>{info.description}</span>
-                {info.cooldown > 0 && (
-                  <span>
-                    {cooldownLeft > 0
-                      ? `On cooldown for ${cooldownLeft} more ${
-                          cooldownLeft === 1 ? 'round' : 'rounds'
-                        }`
-                      : `Cooldown: ${info.cooldown} rounds`}
-                  </span>
-                )}
-              </div>
-            </motion.button>
+            </div>
           )
         })}
       </div>
-      <div>Hover icon for detail</div>
+      <div className='power-ups-hint'>Hover icon for detail</div>
     </>
   )
 }
