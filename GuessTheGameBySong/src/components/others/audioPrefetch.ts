@@ -1,66 +1,85 @@
-const prefetched = new Map<string, HTMLAudioElement>()
-const loading = new Set<string>()
+const inFlight = new Map<string, AbortController>()
+const warmed = new Map<string, string>()
 
-let onPendingChange: ((pending: number) => void) | null = null
+const listeners = new Set<(pending: number) => void>()
 
 export const watchPrefetchProgress = (
-  listener: ((pending: number) => void) | null
+  listener: (pending: number) => void
 ) => {
-  onPendingChange = listener
-}
-
-const report = () => onPendingChange?.(loading.size)
-
-const settle = (url: string) => {
-  loading.delete(url)
-  report()
-}
-
-const release = (url: string) => {
-  const audio = prefetched.get(url)
-  if (audio) {
-    audio.oncanplaythrough = null
-    audio.onerror = null
-    audio.removeAttribute('src')
-    audio.load()
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
   }
-  prefetched.delete(url)
-  loading.delete(url)
+}
+
+const report = () => listeners.forEach((listener) => listener(inFlight.size))
+
+const drop = (url: string) => {
+  inFlight.get(url)?.abort()
+  inFlight.delete(url)
+  const objectUrl = warmed.get(url)
+  if (objectUrl) {
+    URL.revokeObjectURL(objectUrl)
+  }
+  warmed.delete(url)
+}
+
+const warm = async (url: string) => {
+  const controller = new AbortController()
+  inFlight.set(url, controller)
+  report()
+  try {
+    const response = await fetch(url, { signal: controller.signal })
+    if (!response.ok) {
+      throw new Error(String(response.status))
+    }
+    const objectUrl = URL.createObjectURL(await response.blob())
+    if (inFlight.get(url) === controller) {
+      warmed.set(url, objectUrl)
+    } else {
+      URL.revokeObjectURL(objectUrl)
+    }
+  } catch {
+    warmed.delete(url)
+  } finally {
+    if (inFlight.get(url) === controller) {
+      inFlight.delete(url)
+    }
+    report()
+  }
 }
 
 /**
+ * Holds whole files as blobs rather than leaning on the http cache. A media
+ * element issues range requests that chrome will not answer from a cached
+ * response, so warming the cache alone still leaves the player going to the
+ * server - both to start and on every seek.
+ *
  * @param urls every clip worth keeping warm; anything else is dropped
  * @param skipUrl the clip the player element is already loading, so it is not fetched twice
  */
 export const prefetchAudioClips = (urls: string[], skipUrl: string) => {
-  for (const url of [...prefetched.keys()]) {
+  for (const url of [...inFlight.keys(), ...warmed.keys()]) {
     if (!urls.includes(url)) {
-      release(url)
+      drop(url)
     }
   }
 
   for (const url of urls) {
-    if (url === skipUrl || prefetched.has(url)) {
+    if (url === skipUrl || warmed.has(url) || inFlight.has(url)) {
       continue
     }
-    const audio = new Audio()
-    audio.preload = 'auto'
-    audio.oncanplaythrough = () => settle(url)
-    audio.onerror = () => {
-      prefetched.delete(url)
-      settle(url)
-    }
-    audio.src = url
-    audio.load()
-    prefetched.set(url, audio)
-    loading.add(url)
+    void warm(url)
   }
   report()
 }
 
+/** The local copy if we have one, otherwise the address it came from. */
+export const resolveWarmUrl = (url: string) => warmed.get(url) ?? url
+
 export const clearPrefetchedAudio = () => {
-  for (const url of [...prefetched.keys()]) {
-    release(url)
+  for (const url of [...inFlight.keys(), ...warmed.keys()]) {
+    drop(url)
   }
   report()
 }
