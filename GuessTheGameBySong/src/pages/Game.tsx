@@ -70,10 +70,7 @@ const Game = () => {
   const [bootstrapped, setBootstrapped] = useState(false)
   const [clipsLoading, setClipsLoading] = useState(0)
 
-  useEffect(() => {
-    watchPrefetchProgress(setClipsLoading)
-    return () => watchPrefetchProgress(null)
-  }, [])
+  useEffect(() => watchPrefetchProgress(setClipsLoading), [])
 
   const navigate = useNavigate()
 

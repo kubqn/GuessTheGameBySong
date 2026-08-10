@@ -16,7 +16,12 @@ import {
   selectServableSongIndexes,
 } from '../store/selectors'
 import { readStoredNumber, StorageKey, writeStored } from '../storage'
-import { clearPrefetchedAudio, prefetchAudioClips } from './others/audioPrefetch'
+import {
+  clearPrefetchedAudio,
+  prefetchAudioClips,
+  resolveWarmUrl,
+  watchPrefetchProgress,
+} from './others/audioPrefetch'
 
 const FALLBACK_CLIP_SECONDS = 20
 const SECONDS_PER_MINUTE = 60
@@ -61,6 +66,14 @@ const MusicPlayer = () => {
   const playFull = allUnlocked || roundCompleted
   const source = gameId ? audioUrl(gameId, activeIndex, round, playFull) : ''
 
+  const [playbackSource, setPlaybackSource] = useState('')
+
+  useEffect(() => {
+    const resolve = () => setPlaybackSource(source ? resolveWarmUrl(source) : '')
+    resolve()
+    return watchPrefetchProgress(resolve)
+  }, [source])
+
   const carryOverRef = useRef<{ index: number; time: number } | null>(null)
   const wasPlayingFull = useRef(playFull)
 
@@ -104,15 +117,15 @@ const MusicPlayer = () => {
     if (progressBarRef.current) {
       progressBarRef.current.value = '0'
     }
-    audio.src = source
-    if (source) {
+    audio.src = playbackSource
+    if (playbackSource) {
       audio.load()
     }
-  }, [source])
+  }, [playbackSource])
 
   useEffect(() => {
     const audio = audioRef.current
-    if (!audio || !source) {
+    if (!audio || !playbackSource) {
       return
     }
     if (isPlaying) {
@@ -120,7 +133,7 @@ const MusicPlayer = () => {
     } else {
       audio.pause()
     }
-  }, [isPlaying, source, dispatch])
+  }, [isPlaying, playbackSource, dispatch])
 
   const updateProgress = () => {
     if (audioRef.current && progressBarRef.current) {
