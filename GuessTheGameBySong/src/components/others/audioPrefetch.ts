@@ -33,7 +33,12 @@ const warm = async (url: string) => {
     if (!response.ok) {
       throw new Error(String(response.status))
     }
-    warmed.set(url, URL.createObjectURL(await response.blob()))
+    const objectUrl = URL.createObjectURL(await response.blob())
+    if (inFlight.get(url) === controller) {
+      warmed.set(url, objectUrl)
+    } else {
+      URL.revokeObjectURL(objectUrl)
+    }
   } catch {
     warmed.delete(url)
   } finally {

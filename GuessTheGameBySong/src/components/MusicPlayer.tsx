@@ -8,7 +8,6 @@ import {
   selectActiveIndex,
   selectAllUnlocked,
   selectClipTimes,
-  selectGameEnded,
   selectGameId,
   selectIsPlaying,
   selectRound,
@@ -20,7 +19,6 @@ import {
   clearPrefetchedAudio,
   prefetchAudioClips,
   resolveWarmUrl,
-  watchPrefetchProgress,
 } from './others/audioPrefetch'
 
 const FALLBACK_CLIP_SECONDS = 20
@@ -57,7 +55,6 @@ const MusicPlayer = () => {
   const activeIndex = useAppSelector(selectActiveIndex)
   const round = useAppSelector(selectRound)
   const isPlaying = useAppSelector(selectIsPlaying)
-  const gameEnded = useAppSelector(selectGameEnded)
   const servableIndexes = useAppSelector(selectServableSongIndexes)
   const allUnlocked = useAppSelector(selectAllUnlocked)
   const roundCompleted = useAppSelector(selectRoundCompleted)
@@ -69,9 +66,7 @@ const MusicPlayer = () => {
   const [playbackSource, setPlaybackSource] = useState('')
 
   useEffect(() => {
-    const resolve = () => setPlaybackSource(source ? resolveWarmUrl(source) : '')
-    resolve()
-    return watchPrefetchProgress(resolve)
+    setPlaybackSource(source ? resolveWarmUrl(source) : '')
   }, [source])
 
   const carryOverRef = useRef<{ index: number; time: number } | null>(null)
@@ -88,7 +83,7 @@ const MusicPlayer = () => {
   }, [playFull, activeIndex])
 
   useEffect(() => {
-    if (!gameId || gameEnded) {
+    if (!gameId) {
       clearPrefetchedAudio()
       return
     }
@@ -97,7 +92,7 @@ const MusicPlayer = () => {
       audioUrl(gameId, index, round, true)
     )
     prefetchAudioClips([...clips, ...full], source)
-  }, [gameId, gameEnded, round, servableIndexes, source])
+  }, [gameId, round, servableIndexes, source])
 
   useEffect(() => clearPrefetchedAudio, [])
 
