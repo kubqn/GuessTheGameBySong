@@ -3,13 +3,20 @@ import { shuffle } from './others/shuffle'
 import { useAppSelector } from '../store/hooks'
 import { selectRound, selectSettings } from '../store/selectors'
 
-interface ImageData {
-  src: string
+interface Rect {
   width: number
   height: number
   top: number
   left: number
 }
+
+interface SizedImage {
+  src: string
+  width: number
+  height: number
+}
+
+interface ImageData extends SizedImage, Rect {}
 
 const allImages = Object.values(
   import.meta.glob('../images/*.{png,jpg,jpeg,PNG,JPEG}', {
@@ -21,6 +28,19 @@ const allImages = Object.values(
 const MAX_PLACEMENT_ATTEMPTS = 300
 const RESIZE_DEBOUNCE_MS = 1000
 const RESIZE_THRESHOLD_PX = 100
+const CONCURRENT_LOADS = 6
+const MAX_WIDTH_FRACTION = 0.22
+const MAX_HEIGHT_FRACTION = 0.3
+const GRID_STEP_PX = 40
+
+const loadImage = (src: string) =>
+  new Promise<HTMLImageElement | null>((resolve) => {
+    const img = new Image()
+    img.decoding = 'async'
+    img.onload = () => resolve(img)
+    img.onerror = () => resolve(null)
+    img.src = src
+  })
 
 const generateRandomPosition = (
   width: number,
@@ -33,13 +53,72 @@ const generateRandomPosition = (
   return { top, left }
 }
 
-const checkCollision = (img1: ImageData, img2: ImageData) => {
+const scaleToFit = (
+  img: HTMLImageElement,
+  containerWidth: number,
+  containerHeight: number
+): SizedImage => {
+  const factor = Math.min(
+    1,
+    (containerWidth * MAX_WIDTH_FRACTION) / img.naturalWidth,
+    (containerHeight * MAX_HEIGHT_FRACTION) / img.naturalHeight
+  )
+  return {
+    src: img.src,
+    width: Math.round(img.naturalWidth * factor),
+    height: Math.round(img.naturalHeight * factor),
+  }
+}
+
+const checkCollision = (img1: Rect, img2: Rect) => {
   return !(
     img1.left + img1.width < img2.left ||
     img1.left > img2.left + img2.width ||
     img1.top + img1.height < img2.top ||
     img1.top > img2.top + img2.height
   )
+}
+
+const findRandomSpot = (
+  candidate: SizedImage,
+  containerWidth: number,
+  containerHeight: number,
+  placed: ImageData[]
+) => {
+  for (let attempt = 0; attempt < MAX_PLACEMENT_ATTEMPTS; attempt++) {
+    const position = generateRandomPosition(
+      candidate.width,
+      candidate.height,
+      containerWidth,
+      containerHeight
+    )
+    const fits = !placed.some((image) =>
+      checkCollision(image, { ...position, ...candidate })
+    )
+    if (fits) {
+      return position
+    }
+  }
+  return null
+}
+
+const findGridSpot = (
+  candidate: SizedImage,
+  containerWidth: number,
+  containerHeight: number,
+  placed: ImageData[]
+) => {
+  for (let top = 0; top + candidate.height <= containerHeight; top += GRID_STEP_PX) {
+    for (let left = 0; left + candidate.width <= containerWidth; left += GRID_STEP_PX) {
+      const fits = !placed.some((image) =>
+        checkCollision(image, { top, left, ...candidate })
+      )
+      if (fits) {
+        return { top, left }
+      }
+    }
+  }
+  return null
 }
 
 const Background = () => {
@@ -53,50 +132,70 @@ const Background = () => {
   const { shuffleBackground } = useAppSelector(selectSettings)
   const runIdRef = useRef(0)
 
-  const placeImages = () => {
+  const placeImages = async () => {
     const runId = ++runIdRef.current
     const containerWidth = window.innerWidth
     const containerHeight = window.innerHeight
     const placedImages: ImageData[] = []
+    const unplaced: SizedImage[] = []
+    const queue = shuffle(allImages)
 
-    shuffle(allImages).forEach((src) => {
-      const img = new Image()
-      img.src = src
-      img.onload = () => {
-        if (runId !== runIdRef.current) {
-          return
-        }
-        const width = img.width
-        const height = img.height
+    setImages([])
 
-        if (width > containerWidth || height > containerHeight) {
-          return
-        }
+    for (let start = 0; start < queue.length; start += CONCURRENT_LOADS) {
+      const slice = queue.slice(start, start + CONCURRENT_LOADS)
+      const loaded = await Promise.all(slice.map(loadImage))
 
-        let position: { top: number; left: number }
-        let hasCollision
-        let attempts = 0
-
-        do {
-          position = generateRandomPosition(
-            width,
-            height,
-            containerWidth,
-            containerHeight
-          )
-          hasCollision = placedImages.some((placedImg) =>
-            checkCollision(placedImg, { ...position, width, height, src })
-          )
-          attempts++
-          if (attempts > MAX_PLACEMENT_ATTEMPTS) {
-            return
-          }
-        } while (hasCollision)
-
-        placedImages.push({ src, width, height, ...position })
-        setImages([...placedImages])
+      if (runId !== runIdRef.current) {
+        return
       }
-    })
+
+      for (const img of loaded) {
+        if (!img) {
+          continue
+        }
+        const candidate = scaleToFit(img, containerWidth, containerHeight)
+
+        if (
+          candidate.width > containerWidth ||
+          candidate.height > containerHeight
+        ) {
+          continue
+        }
+
+        const position = findRandomSpot(
+          candidate,
+          containerWidth,
+          containerHeight,
+          placedImages
+        )
+        if (position) {
+          placedImages.push({ ...candidate, ...position })
+        } else {
+          unplaced.push(candidate)
+        }
+      }
+
+      setImages([...placedImages])
+    }
+
+    unplaced.sort((a, b) => a.width * a.height - b.width * b.height)
+    let filled = false
+    for (const candidate of unplaced) {
+      const position = findGridSpot(
+        candidate,
+        containerWidth,
+        containerHeight,
+        placedImages
+      )
+      if (position) {
+        placedImages.push({ ...candidate, ...position })
+        filled = true
+      }
+    }
+    if (filled) {
+      setImages([...placedImages])
+    }
   }
 
   useEffect(() => {
@@ -144,12 +243,12 @@ const Background = () => {
     if (shuffleBackground) {
       placeImages()
     }
-    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round, shuffleBackground])
 
   return (
     <div
       className='background-container'
+      aria-hidden='true'
       style={{
         overflow: 'hidden',
       }}
@@ -158,7 +257,11 @@ const Background = () => {
         <img
           key={index}
           src={img.src}
-          alt='background'
+          alt=''
+          loading='lazy'
+          decoding='async'
+          width={img.width}
+          height={img.height}
           style={{
             position: 'absolute',
             top: img.top,

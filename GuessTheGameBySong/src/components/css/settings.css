@@ -1,6 +1,8 @@
 .settings-group {
   max-width: 34rem;
   margin: 0 auto;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .settings-tabs {
@@ -83,5 +85,194 @@
 
 .settings-list li.is-sub .settings-detail {
   margin-left: 2rem;
+}
+
+.settings-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0.2rem;
+  color: inherit;
+  cursor: pointer;
+  background: var(--light);
+  border: 2px solid var(--dark);
+  border-radius: 5px;
+}
+
+.settings-icon-button:hover:not(:disabled),
+.settings-icon-button:focus-visible {
+  background: var(--dark);
+  color: white;
+  transition: background-color 300ms linear;
+}
+
+.settings-list li.is-locked .settings-icon-button {
+  cursor: not-allowed;
+}
+
+.keybindings {
+  padding: 0 2rem 1rem;
+  text-align: left;
+}
+
+.keybindings-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.keybindings-back {
+  display: flex;
+  align-items: center;
+  padding: 0.2rem;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: 5px;
+}
+
+.keybindings-back:hover,
+.keybindings-back:focus-visible {
+  border-color: var(--dark);
+}
+
+.keybindings-title {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.keybindings-hint {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-bottom: 1rem;
+}
+
+.keybindings-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.keybinding {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(71, 91, 90, 0.4);
+}
+
+.keybinding-label {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.keybinding-key {
+  min-width: 6.5rem;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+  background: var(--light);
+  border: 2px solid var(--dark);
+  border-radius: 5px;
+}
+
+.keybinding-key.is-recording {
+  background: var(--dark);
+  color: white;
+  animation: keyRecording 900ms infinite alternate;
+}
+
+@keyframes keyRecording {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.5;
+  }
+}
+
+.keybinding.is-clashing .keybinding-key {
+  border-color: #b00020;
+  color: #b00020;
+}
+
+.keybinding-change {
+  flex-shrink: 0;
+  opacity: 0;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.5rem;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: 2px solid var(--dark);
+  border-radius: 5px;
+  transition: opacity 200ms linear;
+}
+
+.keybinding:hover .keybinding-change,
+.keybinding:focus-within .keybinding-change {
+  opacity: 1;
+}
+
+.keybinding-change:hover:not(:disabled) {
+  background: var(--dark);
+  color: white;
+}
+
+.keybinding-change:disabled {
+  cursor: not-allowed;
+}
+
+@media (hover: none) {
+  .keybinding-change {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keybinding-key.is-recording {
+    animation: none;
+  }
+}
+
+.keybindings-warning {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: #b00020;
+}
+
+.keybindings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.keybindings-actions .button-common:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 480px) {
+  .keybindings {
+    padding: 0 0.75rem 1rem;
+  }
+
+  .keybinding {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .keybinding-label {
+    flex-basis: 100%;
+  }
+
+  .keybinding-key {
+    min-width: 5rem;
+  }
 }
 
