@@ -13,6 +13,7 @@ import {
   selectRound,
   selectRoundCompleted,
   selectServableSongIndexes,
+  selectSettings,
 } from '../store/selectors'
 import { readStoredNumber, StorageKey, writeStored } from '../storage'
 import {
@@ -59,6 +60,7 @@ const MusicPlayer = () => {
   const allUnlocked = useAppSelector(selectAllUnlocked)
   const roundCompleted = useAppSelector(selectRoundCompleted)
   const clipTimes = useAppSelector(selectClipTimes)
+  const { loopClip } = useAppSelector(selectSettings)
 
   const playFull = allUnlocked || roundCompleted
   const source = gameId ? audioUrl(gameId, activeIndex, round, playFull) : ''
@@ -192,6 +194,7 @@ const MusicPlayer = () => {
       <audio
         ref={audioRef}
         preload='auto'
+        loop={loopClip}
         onTimeUpdate={updateProgress}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={() => dispatch(setIsPlaying(false))}

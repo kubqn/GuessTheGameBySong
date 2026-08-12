@@ -1,6 +1,6 @@
 .guess-field {
   position: relative;
-  margin: 20px 0px 10px 0px;
+  margin: 20px 0 10px 0;
 }
 
 .guess-input {
@@ -34,7 +34,8 @@
   cursor: pointer;
 }
 
-.guess-li:hover {
+.guess-li:hover,
+.guess-li.is-highlighted {
   background-color: var(--dark);
 }
 

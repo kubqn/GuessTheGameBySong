@@ -81,14 +81,14 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
   } catch (error) {
     throw new ApiError(
       isTimeout(error)
-        ? `The game server took longer than ${REQUEST_TIMEOUT_MS / 1000}s to answer`
-        : `Cannot reach the game server at ${API_URL}`,
+        ? 'The game server took too long'
+        : 'Cannot reach the game server',
       NETWORK_ERROR_STATUS
     )
   }
 
   const body = await response.text()
-  let data: unknown = null
+  let data: unknown
   try {
     data = body ? JSON.parse(body) : null
   } catch {

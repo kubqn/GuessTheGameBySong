@@ -15,16 +15,19 @@ import {
   submitGuess,
 } from '../store/actions'
 import { motion } from 'framer-motion'
+import { FaArrowsRotate } from 'react-icons/fa6'
 import ResultMessage from '../components/ResultMessage'
-import { useState, useEffect } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 import GameMode from '../components/GameMode'
 import GameOver from '../components/GameOver'
 import PowerUps from '../components/PowerUps'
 import WrongGuesses from '../components/WrongGuesses'
 import GameMenu from '../components/GameMenu'
+import ControlCheatsheet from '../components/ControlCheatsheet'
 import { Ability } from '../api'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { watchPrefetchProgress } from '../components/others/audioPrefetch'
+import useKeyboardControls from '../components/others/useKeyboardControls'
 import {
   selectAllUnlocked,
   selectError,
@@ -43,6 +46,8 @@ import { GamePhase, PageAnimation } from '../store/types'
 import { setAnimationType } from '../store/store'
 import { useNavigate } from 'react-router-dom'
 import { readStored, removeStored, StorageKey, writeStored } from '../storage'
+
+const RETRY_ICON_SIZE = 14
 
 const ROUND_ENTRY_ANIMATION = {
   initial: { opacity: 0, scale: 0.3 },
@@ -69,6 +74,9 @@ const Game = () => {
   const [inputValue, setInputValue] = useState('')
   const [bootstrapped, setBootstrapped] = useState(false)
   const [clipsLoading, setClipsLoading] = useState(0)
+
+  const guessInputRef = useRef<HTMLInputElement>(null)
+  const powerUpsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => watchPrefetchProgress(setClipsLoading), [])
 
@@ -156,9 +164,16 @@ const Game = () => {
     dispatch(submitGuess(guess)).finally(() => setInputValue(''))
   }
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     dispatch(skipSong())
-  }
+  }, [dispatch])
+
+  useKeyboardControls({
+    active: phase === GamePhase.Playing,
+    inputRef: guessInputRef,
+    powerUpsRef,
+    onSkip: handleSkip,
+  })
 
   const handleNextRound = () => {
     setInputValue('')
@@ -181,6 +196,12 @@ const Game = () => {
 
   const handleAbility = (ability: Ability) => {
     dispatch(activateAbility(ability))
+  }
+
+  const handleRetry = () => {
+    if (gameId) {
+      dispatch(resumeGame(gameId))
+    }
   }
 
   if (phase === GamePhase.Bootstrapping) {
@@ -208,8 +229,12 @@ const Game = () => {
 
   return (
     <div className='intro-box'>
-      <motion.div className='game-box' {...ROUND_ENTRY_ANIMATION} key={round}>
-        {/*the server never repeats a game, so the library size is the run's ceiling*/}
+      <ControlCheatsheet />
+      <motion.div
+        className={`game-box round-frame${isInfinite ? ' is-endless' : ''}`}
+        {...ROUND_ENTRY_ANIMATION}
+        key={round}
+      >
         <h1>
           Round {round}
           {showRoundCount && totalGames > 0 && ` of ${totalGames}`}
@@ -219,12 +244,26 @@ const Game = () => {
           {!isInfinite && <Hearts />}
         </div>
         <MusicPlayer />
-        {error && <p className='server-error'>{error}</p>}
+        {error && (
+          <div className='server-error' role='alert'>
+            <span>{error}</span>
+            <button
+              className={`server-error-retry${isBusy ? ' is-spinning' : ''}`}
+              disabled={isBusy}
+              onClick={handleRetry}
+              aria-label='Retry'
+              title='Retry'
+            >
+              <FaArrowsRotate size={RETRY_ICON_SIZE} />
+            </button>
+          </div>
+        )}
         {!roundCompleted && !gameEnded && (
           <InputGuess
             inputValue={inputValue}
             setInputValue={setInputValue}
             onSubmitGuess={handleGuess}
+            inputRef={guessInputRef}
           />
         )}
         <WrongGuesses />
@@ -236,6 +275,7 @@ const Game = () => {
             fullSongsLoading={
               (allUnlocked || roundCompleted) && clipsLoading > 0
             }
+            stripRef={powerUpsRef}
           />
         )}
         {!gameEnded && (

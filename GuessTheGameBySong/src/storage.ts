@@ -4,6 +4,7 @@ export enum StorageKey {
   Settings = 'gtg-settings',
   PlayedGames = 'gtg-played-games',
   WrongGuesses = 'gtg-wrong-guesses',
+  CheatsheetSize = 'gtg-cheatsheet-size',
 }
 
 const safely = <T>(run: () => T, fallback: T): T => {

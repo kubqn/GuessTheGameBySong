@@ -53,7 +53,6 @@ const GameOverModal = () => {
       duration: COUNT_UP_SECONDS,
     })
 
-    //the cleanup stops both animations, so a StrictMode remount cannot leave a stale chain running
     pointsAnimation
       .then(() => {
         setShowRound(true)

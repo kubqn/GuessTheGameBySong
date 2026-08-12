@@ -29,7 +29,6 @@ const SongSelector = ({ onSkip }: SongSelectorProps) => {
   const servableIndexes = useAppSelector(selectServableSongIndexes)
   const isBusy = useAppSelector(selectIsBusy)
 
-  //the server decides how far the player got - the client only mirrors it
   const isUnlocked = (index: number) =>
     gameEnded || servableIndexes.includes(index)
 

@@ -1,6 +1,6 @@
 import './css/gamemode.css'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface GameModeProps {
   onChooseMode: (infinite: boolean) => void
@@ -8,7 +8,6 @@ interface GameModeProps {
   error: string | null
 }
 
-/** The box tracks the cursor across this range: fully left to fully right. */
 const TILT_RANGE = 100
 const TILT_INPUT = [-TILT_RANGE, 0, TILT_RANGE]
 
@@ -35,6 +34,7 @@ const MODES = [
 ]
 
 const GameMode = ({ onChooseMode, isStarting, error }: GameModeProps) => {
+  const [pendingMode, setPendingMode] = useState<boolean | null>(null)
   const x = useMotionValue(0)
   const background = useTransform(x, TILT_INPUT, BACKGROUNDS)
   const color = useTransform(x, TILT_INPUT, ICON_COLORS)
@@ -56,18 +56,27 @@ const GameMode = ({ onChooseMode, isStarting, error }: GameModeProps) => {
 
   return (
     <motion.div className='container' style={{ background }}>
-      {MODES.map(({ infinite, label, hint, side }) => (
-        <button
-          key={label}
-          className='navigation-button game-mode'
-          style={{ [side]: '0px', color: 'white' }}
-          disabled={isStarting}
-          onClick={() => onChooseMode(infinite)}
-        >
-          {label}
-          <p>{hint}</p>
-        </button>
-      ))}
+      {MODES.map(({ infinite, label, hint, side }) => {
+        const isPending = isStarting && pendingMode === infinite
+        return (
+          <button
+            key={label}
+            className={`navigation-button game-mode${
+              isStarting ? ' is-waiting' : ''
+            }`}
+            style={{ [side]: '0px', color: 'white' }}
+            disabled={isStarting}
+            aria-busy={isPending}
+            onClick={() => {
+              setPendingMode(infinite)
+              onChooseMode(infinite)
+            }}
+          >
+            {label}
+            <p>{isPending ? 'Loading...' : hint}</p>
+          </button>
+        )
+      })}
       <motion.div className='box' style={{ x }}>
         <p className='gamemode-info'>{isStarting ? 'LOADING' : 'MODE'}</p>
         <svg className='progress-icon'>
@@ -89,6 +98,11 @@ const GameMode = ({ onChooseMode, isStarting, error }: GameModeProps) => {
           />
         </svg>
       </motion.div>
+      {isStarting && (
+        <p className='game-mode-status' role='status'>
+          Contacting the game server...
+        </p>
+      )}
       {error && <p className='game-mode-error'>{error}</p>}
     </motion.div>
   )

@@ -20,6 +20,73 @@
   margin: 0;
 }
 
+.power-up[aria-disabled='true'] {
+  opacity: 0.5;
+}
+
+.power-up[aria-disabled='true']:hover {
+  background-color: var(--bright);
+  color: inherit;
+}
+
+.power-up:focus {
+  outline: none;
+  opacity: 1;
+}
+
+.power-up:focus .tooltip-text {
+  visibility: visible;
+}
+
+.power-ups:has(.power-up:hover) .power-up:focus:not(:hover) .tooltip-text {
+  visibility: hidden;
+}
+
+.power-up:focus::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  z-index: 1;
+  padding: 3px;
+  border-radius: 6px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--dark) 0%,
+    var(--dark) 30%,
+    #ffffff 50%,
+    var(--dark) 70%,
+    var(--dark) 100%
+  );
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: focusSheen 1.8s linear infinite;
+}
+
+@keyframes focusSheen {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.power-ups.is-still .power-up:focus::after {
+  animation: none;
+  background: var(--dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .power-up:focus::after {
+    animation: none;
+    background: var(--dark);
+  }
+}
+
 .power-up-cost,
 .power-up-cooldown {
   display: flex;
@@ -86,6 +153,39 @@
 
 .power-up .tooltip-text strong {
   color: var(--bright);
+}
+
+@media (hover: none) {
+  .power-up .tooltip-text {
+    display: none;
+  }
+
+  .power-up-slot.is-tapped .power-up {
+    outline: 3px solid var(--dark);
+    outline-offset: 2px;
+    opacity: 1;
+  }
+}
+
+.power-up-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: var(--panel-width);
+  max-width: 100%;
+  margin: 10px auto 0;
+  padding: 8px;
+  text-align: left;
+  background: black;
+  border-radius: 6px;
+}
+
+.power-up-detail strong {
+  color: var(--bright);
+}
+
+.power-up-detail .is-cooling {
+  color: #ff6b6b;
 }
 
 .power-up .tooltip-text .is-cooling {

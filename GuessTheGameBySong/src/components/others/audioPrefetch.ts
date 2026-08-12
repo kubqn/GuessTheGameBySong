@@ -49,15 +49,6 @@ const warm = async (url: string) => {
   }
 }
 
-/**
- * Holds whole files as blobs rather than leaning on the http cache. A media
- * element issues range requests that chrome will not answer from a cached
- * response, so warming the cache alone still leaves the player going to the
- * server - both to start and on every seek.
- *
- * @param urls every clip worth keeping warm; anything else is dropped
- * @param skipUrl the clip the player element is already loading, so it is not fetched twice
- */
 export const prefetchAudioClips = (urls: string[], skipUrl: string) => {
   for (const url of [...inFlight.keys(), ...warmed.keys()]) {
     if (!urls.includes(url)) {
@@ -74,7 +65,6 @@ export const prefetchAudioClips = (urls: string[], skipUrl: string) => {
   report()
 }
 
-/** The local copy if we have one, otherwise the address it came from. */
 export const resolveWarmUrl = (url: string) => warmed.get(url) ?? url
 
 export const clearPrefetchedAudio = () => {
