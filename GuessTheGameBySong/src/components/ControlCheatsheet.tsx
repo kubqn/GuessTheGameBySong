@@ -47,7 +47,7 @@ const CheatsheetPanel = () => {
 
   useEffect(() => {
     const panel = panelRef.current
-    if (!panel) {
+    if (!panel || typeof ResizeObserver === 'undefined') {
       return
     }
     let timer = 0
