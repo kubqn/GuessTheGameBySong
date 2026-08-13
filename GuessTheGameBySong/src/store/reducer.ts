@@ -6,15 +6,15 @@ import {
 import {
   clearError,
   GAME_THUNK_PREFIX,
+  loadRoundHistory,
   resetState,
-  restorePlayedGames,
   restoreWrongGuesses,
   setActiveIndex,
   setIsPlaying,
   startGame,
   submitGuess,
 } from './actions'
-import type { GameState } from '../api'
+import type { GameState, RoundHistoryEntry } from '../api'
 import { RequestStatus } from './types'
 
 const DEFAULT_MAX_LIVES = 5
@@ -43,17 +43,34 @@ export interface AppState {
   isPlaying: boolean
   status: RequestStatus
   error: string | null
-  playedGames: string[]
   wrongGuesses: WrongGuess[]
   pendingRequestId: string | null
   abilityCooldowns: Record<string, number>
   clipTimes: number[]
+  roundHistory: RoundHistoryEntry[]
+  historyStatus: RequestStatus
+  roundProgress: RoundProgress
 }
 
 export interface WrongGuess {
   text: string
   correctFranchise: boolean
 }
+
+export interface RoundProgress {
+  round: number
+  guesses: number
+  songsUsed: number
+}
+
+const progressFor = (round: number, songsUsed: number): RoundProgress => ({
+  round,
+  guesses: 0,
+  songsUsed,
+})
+
+export const attemptOf = ({ songsUsed, guesses }: RoundProgress) =>
+  Math.max(songsUsed, guesses - 1) + 1
 
 const initialState: AppState = {
   gameId: null,
@@ -76,16 +93,20 @@ const initialState: AppState = {
   isPlaying: false,
   status: RequestStatus.Idle,
   error: null,
-  playedGames: [],
   wrongGuesses: [],
   pendingRequestId: null,
   abilityCooldowns: {},
   clipTimes: [],
+  roundHistory: [],
+  historyStatus: RequestStatus.Idle,
+  roundProgress: progressFor(FIRST_ROUND, FIRST_SONG_INDEX),
 }
 
 const applyGameState = (state: AppState, payload: GameState) => {
   const roundChanged = payload.current_round !== state.round
-  const songUnlocked = payload.current_song > state.currentSong
+  const songsAdvanced = payload.current_song - state.currentSong
+  const songUnlocked = songsAdvanced > 0
+  const unlockedNow = payload.all_unlocked && !state.allUnlocked
 
   state.gameId = payload.game_id
   state.round = payload.current_round
@@ -106,12 +127,21 @@ const applyGameState = (state: AppState, payload: GameState) => {
   state.abilityCooldowns = payload.ability_cooldowns ?? {}
   state.clipTimes = payload.clip_times ?? []
 
-  if (payload.correct_answer && !state.playedGames.includes(payload.correct_answer)) {
-    state.playedGames.push(payload.correct_answer)
-  }
-
   if (roundChanged) {
     state.wrongGuesses = []
+  }
+
+  if (payload.current_round !== state.roundProgress.round) {
+    state.roundProgress = progressFor(
+      payload.current_round,
+      payload.current_song
+    )
+  } else if (
+    songUnlocked &&
+    !unlockedNow &&
+    !payload.round_completed
+  ) {
+    state.roundProgress.songsUsed += songsAdvanced
   }
 
   if (roundChanged || (songUnlocked && !payload.all_unlocked)) {
@@ -160,21 +190,31 @@ const reducer = createReducer(initialState, (builder) => {
       state.error = null
     })
     .addCase(resetState, () => initialState)
-    .addCase(restorePlayedGames, (state, action) => {
-      state.playedGames = action.payload
-    })
     .addCase(restoreWrongGuesses, (state, action) => {
       state.wrongGuesses = action.payload
     })
     .addCase(startGame.fulfilled, (state) => {
-      state.playedGames = []
       state.wrongGuesses = []
+      state.roundHistory = []
+      state.historyStatus = RequestStatus.Idle
+      state.roundProgress = progressFor(FIRST_ROUND, FIRST_SONG_INDEX)
+    })
+    .addCase(loadRoundHistory.pending, (state) => {
+      state.historyStatus = RequestStatus.Loading
+    })
+    .addCase(loadRoundHistory.fulfilled, (state, action) => {
+      state.historyStatus = RequestStatus.Ready
+      state.roundHistory = action.payload
+    })
+    .addCase(loadRoundHistory.rejected, (state) => {
+      state.historyStatus = RequestStatus.Error
     })
     .addCase(submitGuess.fulfilled, (state, action) => {
-      if (
-        action.meta.requestId !== state.pendingRequestId ||
-        action.payload.is_correct !== false
-      ) {
+      if (action.meta.requestId !== state.pendingRequestId) {
+        return
+      }
+      state.roundProgress.guesses += 1
+      if (action.payload.is_correct !== false) {
         return
       }
       const text = action.meta.arg.trim()

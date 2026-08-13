@@ -5,9 +5,9 @@ import InputGuess from '../components/InputGuess'
 import {
   activateAbility,
   clearError,
+  loadRoundHistory,
   nextRound,
   resetState,
-  restorePlayedGames,
   restoreWrongGuesses,
   resumeGame,
   skipSong,
@@ -36,7 +36,6 @@ import {
   selectGameId,
   selectIsBusy,
   selectIsInfinite,
-  selectPlayedGames,
   selectRound,
   selectRoundCompleted,
   selectSettings,
@@ -65,11 +64,10 @@ const Game = () => {
   const gameEnded = useAppSelector(selectGameEnded)
   const isBusy = useAppSelector(selectIsBusy)
   const error = useAppSelector(selectError)
-  const playedGames = useAppSelector(selectPlayedGames)
   const wrongGuesses = useAppSelector(selectWrongGuesses)
   const totalGames = useAppSelector(selectGameCatalog).length
   const allUnlocked = useAppSelector(selectAllUnlocked)
-  const { showRoundCount } = useAppSelector(selectSettings)
+  const { showRoundCount, strikePlayedGames } = useAppSelector(selectSettings)
 
   const [inputValue, setInputValue] = useState('')
   const [bootstrapped, setBootstrapped] = useState(false)
@@ -83,23 +81,14 @@ const Game = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
+    removeStored(StorageKey.LegacyPlayedGames)
+
     const storedGameId = readStored(StorageKey.GameId)
     if (!storedGameId) {
       setBootstrapped(true)
       return
     }
 
-    const stored = readStored(StorageKey.PlayedGames)
-    if (stored) {
-      try {
-        const { gameId: storedFor, games } = JSON.parse(stored)
-        if (storedFor === storedGameId && Array.isArray(games)) {
-          dispatch(restorePlayedGames(games))
-        }
-      } catch {
-        removeStored(StorageKey.PlayedGames)
-      }
-    }
     dispatch(resumeGame(storedGameId))
       .unwrap()
       .then(({ current_round }) => {
@@ -121,15 +110,10 @@ const Game = () => {
   }, [dispatch])
 
   useEffect(() => {
-    if (gameId) {
-      writeStored(
-        StorageKey.PlayedGames,
-        JSON.stringify({ gameId, games: playedGames })
-      )
-    } else {
-      removeStored(StorageKey.PlayedGames)
+    if (gameId && strikePlayedGames) {
+      dispatch(loadRoundHistory())
     }
-  }, [gameId, playedGames])
+  }, [dispatch, gameId, round, strikePlayedGames])
 
   useEffect(() => {
     if (gameId) {

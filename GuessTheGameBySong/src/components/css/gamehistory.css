@@ -1,0 +1,174 @@
+.game-history {
+  width: 100%;
+  margin-bottom: 5%;
+  text-align: left;
+}
+
+.history-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px;
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: inherit;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.25);
+  border: 2px solid var(--dark);
+  border-radius: 5px;
+  transition: background-color 300ms linear;
+}
+
+.history-toggle:hover,
+.history-toggle:focus-visible {
+  background: var(--dark);
+}
+
+.history-toggle svg {
+  transition: transform 300ms ease;
+}
+
+.history-toggle.is-open svg {
+  transform: rotate(180deg);
+}
+
+.history-panel {
+  overflow: hidden;
+}
+
+.history-summary {
+  margin: 6px 0;
+  font-size: 0.55rem;
+  text-align: center;
+  color: var(--bright);
+}
+
+.history-summary.is-failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #ffdada;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 13rem;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'round game abilities'
+    'round detail abilities';
+  align-items: center;
+  gap: 0 8px;
+  padding: 4px 6px;
+  border: 2px solid var(--bright);
+  border-left-width: 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.history-row.is-solved {
+  border-left-color: #4f9d5d;
+}
+
+.history-row.is-missed {
+  border-left-color: #b03030;
+}
+
+.history-row.is-skipped {
+  border-left-color: #c9a227;
+}
+
+.history-round {
+  grid-area: round;
+  font-size: 0.6rem;
+  color: var(--bright);
+}
+
+.history-game {
+  grid-area: game;
+  font-size: 0.6rem;
+  overflow-wrap: anywhere;
+}
+
+.history-detail {
+  grid-area: detail;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  font-size: 0.5rem;
+  color: var(--bright);
+}
+
+.is-solved .history-outcome {
+  color: #a8e6b0;
+}
+
+.is-missed .history-outcome {
+  color: #ffdada;
+}
+
+.is-skipped .history-outcome {
+  color: #f0d98a;
+}
+
+.history-abilities {
+  grid-area: abilities;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.history-ability {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  color: var(--bright);
+}
+
+.history-ability-count {
+  font-size: 0.5rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  .history-toggle {
+    font-size: 0.5rem;
+  }
+
+  .history-list {
+    max-height: 12rem;
+  }
+
+  .history-round,
+  .history-game {
+    font-size: 0.5rem;
+  }
+
+  .history-detail,
+  .history-ability-count {
+    font-size: 0.4rem;
+  }
+}

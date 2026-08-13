@@ -3,6 +3,7 @@ import {
   abilityCatalogRequest,
   abilityRequest,
   gameCatalogRequest,
+  gameHistoryRequest,
   gameStateRequest,
   guessRequest,
   nextRoundRequest,
@@ -11,6 +12,7 @@ import {
   type Ability,
   type AbilityCatalog,
   type GameState,
+  type RoundHistoryEntry,
 } from '../api'
 import type { RootState } from './store'
 import type { WrongGuess } from './reducer'
@@ -24,7 +26,6 @@ export const setActiveIndex = createAction<number>('SET_ACTIVE_INDEX')
 export const setIsPlaying = createAction<boolean>('SET_IS_PLAYING')
 export const clearError = createAction('CLEAR_ERROR')
 export const resetState = createAction('RESET_STATE')
-export const restorePlayedGames = createAction<string[]>('RESTORE_PLAYED_GAMES')
 export const restoreWrongGuesses = createAction<WrongGuess[]>(
   'RESTORE_WRONG_GUESSES'
 )
@@ -87,6 +88,22 @@ export const nextRound = gameThunk('next', (gameId) => nextRoundRequest(gameId))
 export const activateAbility = gameThunk<Ability>('ability', (gameId, ability) =>
   abilityRequest(gameId, ability)
 )
+
+export const loadRoundHistory = createAsyncThunk<
+  RoundHistoryEntry[],
+  void,
+  { state: RootState; rejectValue: string }
+>('history/load', async (_, { getState, rejectWithValue }) => {
+  const gameId = getState().app.gameId
+  if (!gameId) {
+    return rejectWithValue(NO_ACTIVE_GAME_MESSAGE)
+  }
+  try {
+    return await gameHistoryRequest(gameId)
+  } catch (error) {
+    return rejectWithValue(toMessage(error))
+  }
+})
 
 export const loadGameCatalog = createAsyncThunk<
   string[],
