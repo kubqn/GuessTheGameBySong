@@ -1,11 +1,5 @@
 import './css/powerups.css'
-import { FaForward } from 'react-icons/fa'
-import {
-  FaHeartCirclePlus,
-  FaHeartCircleXmark,
-  FaShieldHeart,
-  FaMusic,
-} from 'react-icons/fa6'
+import { FaHeartCircleXmark } from 'react-icons/fa6'
 import { CiBadgeDollar, CiTimer } from 'react-icons/ci'
 import { motion } from 'framer-motion'
 import { useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
@@ -13,6 +7,7 @@ import { Ability, type AbilityInfo } from '../api'
 import { KeyAction } from '../store/keybindings'
 import { useAppSelector } from '../store/hooks'
 import useCoarsePointer from './others/useCoarsePointer'
+import { ABILITY_ICONS } from './others/abilityIcons'
 import {
   selectAbilityCatalog,
   selectAbilityCooldowns,
@@ -164,20 +159,11 @@ const PowerUps = ({
   }
 
   const iconFor = (ability: Ability, affordable: boolean): ReactNode => {
-    switch (ability) {
-      case Ability.ExtraLife:
-        return affordable ? (
-          <FaHeartCirclePlus size={ICON_SIZE} />
-        ) : (
-          <FaHeartCircleXmark size={ICON_SIZE} />
-        )
-      case Ability.SkipRound:
-        return <FaForward size={ICON_SIZE} />
-      case Ability.Unlock:
-        return <FaMusic size={ICON_SIZE} />
-      case Ability.Shield:
-        return <FaShieldHeart size={ICON_SIZE} />
-    }
+    const Icon =
+      ability === Ability.ExtraLife && !affordable
+        ? FaHeartCircleXmark
+        : ABILITY_ICONS[ability]
+    return <Icon size={ICON_SIZE} />
   }
 
   const spentFor = (ability: Ability) => {

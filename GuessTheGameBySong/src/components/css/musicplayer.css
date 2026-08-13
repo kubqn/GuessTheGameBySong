@@ -36,6 +36,16 @@ input[type='range']::-webkit-slider-thumb {
   border-radius: 50%;
 }
 
+.progress-bar.has-clip-window {
+  background: linear-gradient(
+    to right,
+    #ddd var(--clip-start),
+    #c9a227 var(--clip-start),
+    #c9a227 var(--clip-end),
+    #ddd var(--clip-end)
+  );
+}
+
 .time {
   display: flex;
   justify-content: space-between;
@@ -67,4 +77,26 @@ input[type='range']::-webkit-slider-thumb {
 
 .play-music-button:hover {
   background-color: var(--dark-bright);
+}
+
+.clip-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.clip-status.is-failed {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  color: #ffdada;
+}
+
+.clip-dots {
+  display: inline-block;
+  width: 1.5em;
+  text-align: left;
 }

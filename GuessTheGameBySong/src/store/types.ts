@@ -16,3 +16,9 @@ export enum GamePhase {
   ChoosingMode = 'choosingMode',
   Playing = 'playing',
 }
+
+export enum RoundOutcome {
+  Solved = 'solved',
+  Missed = 'missed',
+  Skipped = 'skipped',
+}

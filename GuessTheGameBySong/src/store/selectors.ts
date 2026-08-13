@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit'
 import type { RootState } from './store'
+import { attemptOf } from './reducer'
 import { RequestStatus } from './types'
 
 export const selectGameId = (state: RootState) => state.app.gameId
@@ -30,6 +31,10 @@ export const selectAbilityCooldowns = (state: RootState) =>
 export const selectClipTimes = (state: RootState) => state.app.clipTimes
 export const selectPlayedGames = (state: RootState) => state.app.playedGames
 export const selectWrongGuesses = (state: RootState) => state.app.wrongGuesses
+export const selectRoundHistory = (state: RootState) => state.app.roundHistory
+export const selectHistoryStatus = (state: RootState) => state.app.historyStatus
+export const selectRoundAttempt = (state: RootState) =>
+  attemptOf(state.app.roundProgress)
 export const selectAnimationType = (state: RootState) => state.animation
 export const selectSettings = (state: RootState) => state.settings
 

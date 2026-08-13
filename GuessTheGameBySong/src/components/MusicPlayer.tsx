@@ -1,6 +1,13 @@
 import './css/musicplayer.css'
-import { useState, useRef, useEffect } from 'react'
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  type CSSProperties,
+} from 'react'
 import { FaVolumeUp } from 'react-icons/fa'
+import { FaArrowsRotate } from 'react-icons/fa6'
 import { setIsPlaying } from '../store/actions'
 import { audioUrl } from '../api'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -22,7 +29,7 @@ import {
   resolveWarmUrl,
 } from './others/audioPrefetch'
 
-const FALLBACK_CLIP_SECONDS = 20
+const CLIP_SECONDS = 20
 const SECONDS_PER_MINUTE = 60
 const SECONDS_PADDING = 2
 const PERCENT_MAX = 100
@@ -30,6 +37,11 @@ const MS_PER_SECOND = 1000
 const SEEK_SAFETY_SECONDS = 1
 const MAX_VOLUME = 1
 const VOLUME_ICON_SIZE = 40
+const RETRY_ICON_SIZE = 14
+const MAX_LOAD_RETRIES = 3
+const RETRY_DELAY_MS = 700
+const MAX_DOTS = 3
+const DOT_INTERVAL_MS = 400
 
 const formatTime = (time: number) => {
   const minutes = Math.floor(time / SECONDS_PER_MINUTE)
@@ -42,8 +54,10 @@ const formatTime = (time: number) => {
 const MusicPlayer = () => {
   const dispatch = useAppDispatch()
   const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(FALLBACK_CLIP_SECONDS)
+  const [duration, setDuration] = useState(CLIP_SECONDS)
   const [loadFailed, setLoadFailed] = useState(false)
+  const [refetching, setRefetching] = useState(false)
+  const [dots, setDots] = useState(1)
   const [volume, setVolume] = useState(() =>
     readStoredNumber(StorageKey.Volume, MAX_VOLUME)
   )
@@ -60,16 +74,67 @@ const MusicPlayer = () => {
   const allUnlocked = useAppSelector(selectAllUnlocked)
   const roundCompleted = useAppSelector(selectRoundCompleted)
   const clipTimes = useAppSelector(selectClipTimes)
-  const { loopClip } = useAppSelector(selectSettings)
+  const { loopClip, reduceAnimations } = useAppSelector(selectSettings)
 
   const playFull = allUnlocked || roundCompleted
   const source = gameId ? audioUrl(gameId, activeIndex, round, playFull) : ''
 
   const [playbackSource, setPlaybackSource] = useState('')
+  const [loadAttempt, setLoadAttempt] = useState(0)
+
+  const retriesRef = useRef(0)
+  const retryTimerRef = useRef(0)
+
+  const reloadClip = useCallback(() => {
+    clearTimeout(retryTimerRef.current)
+    setPlaybackSource(source ? resolveWarmUrl(source) : '')
+    setLoadAttempt((attempt) => attempt + 1)
+  }, [source])
 
   useEffect(() => {
+    clearTimeout(retryTimerRef.current)
+    retriesRef.current = 0
+    setRefetching(false)
     setPlaybackSource(source ? resolveWarmUrl(source) : '')
   }, [source])
+
+  useEffect(() => () => clearTimeout(retryTimerRef.current), [])
+
+  useEffect(() => {
+    if (!refetching || reduceAnimations) {
+      return
+    }
+    const ticker = window.setInterval(
+      () => setDots((count) => (count % MAX_DOTS) + 1),
+      DOT_INTERVAL_MS
+    )
+    return () => window.clearInterval(ticker)
+  }, [refetching, reduceAnimations])
+
+  const handleLoadError = () => {
+    if (!playbackSource) {
+      return
+    }
+    dispatch(setIsPlaying(false))
+    clearTimeout(retryTimerRef.current)
+    if (retriesRef.current >= MAX_LOAD_RETRIES) {
+      setRefetching(false)
+      setLoadFailed(true)
+      return
+    }
+    retriesRef.current += 1
+    setRefetching(true)
+    retryTimerRef.current = window.setTimeout(
+      reloadClip,
+      RETRY_DELAY_MS * retriesRef.current
+    )
+  }
+
+  const handleManualRetry = () => {
+    retriesRef.current = 0
+    setLoadFailed(false)
+    reloadClip()
+  }
 
   const carryOverRef = useRef<{ index: number; time: number } | null>(null)
   const wasPlayingFull = useRef(playFull)
@@ -118,7 +183,7 @@ const MusicPlayer = () => {
     if (playbackSource) {
       audio.load()
     }
-  }, [playbackSource])
+  }, [playbackSource, loadAttempt])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -148,7 +213,10 @@ const MusicPlayer = () => {
     if (!audio || !Number.isFinite(audio.duration)) {
       return
     }
-    setDuration(audio.duration || FALLBACK_CLIP_SECONDS)
+    clearTimeout(retryTimerRef.current)
+    retriesRef.current = 0
+    setRefetching(false)
+    setDuration(audio.duration || CLIP_SECONDS)
 
     if (!playFull) {
       return
@@ -170,6 +238,23 @@ const MusicPlayer = () => {
       setCurrentTime(target)
     }
   }
+
+  const clipWindow = () => {
+    const startMs = clipTimes[activeIndex]
+    if (!playFull || !Number.isFinite(startMs) || duration <= 0) {
+      return null
+    }
+    const start = ((startMs / MS_PER_SECOND) * PERCENT_MAX) / duration
+    if (start >= PERCENT_MAX) {
+      return null
+    }
+    return {
+      start,
+      end: Math.min(PERCENT_MAX, start + (CLIP_SECONDS * PERCENT_MAX) / duration),
+    }
+  }
+
+  const clip = clipWindow()
 
   const onChangeProgressBar = () => {
     if (audioRef.current && progressBarRef.current) {
@@ -198,18 +283,23 @@ const MusicPlayer = () => {
         onTimeUpdate={updateProgress}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={() => dispatch(setIsPlaying(false))}
-        onError={() => {
-          if (source) {
-            setLoadFailed(true)
-            dispatch(setIsPlaying(false))
-          }
-        }}
+        onError={handleLoadError}
       />
       <input
         type='range'
+        className={`progress-bar${clip ? ' has-clip-window' : ''}`}
         ref={progressBarRef}
         defaultValue='0'
         onChange={onChangeProgressBar}
+        title={clip ? 'Highlighted: the clip you guessed from' : undefined}
+        style={
+          clip
+            ? ({
+                '--clip-start': `${clip.start}%`,
+                '--clip-end': `${clip.end}%`,
+              } as CSSProperties)
+            : undefined
+        }
       />
       <div className='time'>
         <span>{formatTime(currentTime)}</span>
@@ -217,12 +307,32 @@ const MusicPlayer = () => {
       </div>
       <button
         className='button-common'
-        disabled={!source || loadFailed}
+        disabled={!source || loadFailed || refetching}
         onClick={() => dispatch(setIsPlaying(!isPlaying))}
       >
         {isPlaying ? 'Pause' : 'Play'}
       </button>
-      {loadFailed && <div>Could not load this clip from the server.</div>}
+      {refetching && (
+        <div className='clip-status' role='status'>
+          Fetching this clip
+          <span className='clip-dots'>
+            {'.'.repeat(reduceAnimations ? MAX_DOTS : dots)}
+          </span>
+        </div>
+      )}
+      {loadFailed && (
+        <div className='clip-status is-failed' role='alert'>
+          <span>Could not load this clip from the server.</span>
+          <button
+            className='server-error-retry'
+            onClick={handleManualRetry}
+            aria-label='Retry'
+            title='Retry'
+          >
+            <FaArrowsRotate size={RETRY_ICON_SIZE} />
+          </button>
+        </div>
+      )}
       <div className='volume-control'>
         <FaVolumeUp size={VOLUME_ICON_SIZE} style={{ cursor: 'default' }} />
         <input

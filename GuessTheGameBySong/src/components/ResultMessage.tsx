@@ -5,10 +5,10 @@ import './css/resultmessage.css'
 import { useAppSelector } from '../store/hooks'
 import {
   selectCorrectAnswer,
-  selectCurrentSong,
   selectGameEnded,
   selectIsBusy,
   selectIsCorrect,
+  selectRoundAttempt,
   selectRoundCompleted,
   selectSettings,
 } from '../store/selectors'
@@ -25,7 +25,7 @@ const ResultMessage = ({ handleNextRound }: ResultMessageProps) => {
   const roundCompleted = useAppSelector(selectRoundCompleted)
   const gameEnded = useAppSelector(selectGameEnded)
   const isCorrect = useAppSelector(selectIsCorrect)
-  const currentSong = useAppSelector(selectCurrentSong)
+  const attempt = useAppSelector(selectRoundAttempt)
   const answer = useAppSelector(selectCorrectAnswer)
   const isBusy = useAppSelector(selectIsBusy)
   const { reduceAnimations } = useAppSelector(selectSettings)
@@ -37,7 +37,7 @@ const ResultMessage = ({ handleNextRound }: ResultMessageProps) => {
   }
 
   const attemptIndex = Math.min(
-    currentSong,
+    attempt - 1,
     CONFETTI_PIECES_BY_ATTEMPT.length - 1
   )
   const confettiPieces = isCorrect

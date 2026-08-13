@@ -33,6 +33,14 @@ export enum Ability {
   ExtraLife = 'extra_life',
 }
 
+export interface RoundHistoryEntry {
+  round_number: number
+  game: string
+  guessed_correctly: boolean
+  guessed_on: number
+  used_powerups: Ability[]
+}
+
 export interface AbilityInfo {
   cost: number
   cooldown: number
@@ -136,6 +144,9 @@ export const abilityRequest = (gameId: string, ability: Ability) =>
 
 export const gameStateRequest = (gameId: string) =>
   request<GameState>(`/game_state/${gameId}`)
+
+export const gameHistoryRequest = (gameId: string) =>
+  request<RoundHistoryEntry[]>(`/game_history/${gameId}`)
 
 export const abilityCatalogRequest = () =>
   request<AbilityCatalog>('/abilities_data')

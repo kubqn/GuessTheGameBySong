@@ -1,5 +1,12 @@
 import './css/gameover.css'
-import { animate, motion, useAnimation, useMotionValue, useTransform } from 'framer-motion'
+import {
+  animate,
+  motion,
+  useAnimation,
+  useMotionValue,
+  useTransform,
+  type AnimationPlaybackControls,
+} from 'framer-motion'
 import { resetState } from '../store/actions'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import {
@@ -10,6 +17,7 @@ import {
   selectRound,
 } from '../store/selectors'
 import { useEffect, useState } from 'react'
+import GameHistory from './GameHistory'
 
 const COUNTER_START_VALUE = 500
 const COUNT_UP_SECONDS = 2
@@ -45,28 +53,44 @@ const GameOverModal = () => {
   const [showAnswer, setShowAnswer] = useState(false)
   const sumPoints = points + bonusPoints
 
-  useEffect(() => {
-    const pointsAnimation = animate(countPoints, sumPoints, {
-      duration: COUNT_UP_SECONDS,
-    })
-    const roundAnimation = animate(countRound, round, {
-      duration: COUNT_UP_SECONDS,
-    })
+  const spoilsAnswer = Boolean(answer && responseText.includes(answer))
 
-    pointsAnimation
-      .then(() => {
+  useEffect(() => {
+    let cancelled = false
+    const running: AnimationPlaybackControls[] = []
+
+    const countUp = (value: typeof countPoints, target: number) => {
+      const animation = animate(value, target, { duration: COUNT_UP_SECONDS })
+      running.push(animation)
+      return animation
+    }
+
+    const popIn = () =>
+      controls.start({ scale: 1, transition: { duration: REVEAL_SECONDS } })
+
+    const reveal = async () => {
+      try {
+        await countUp(countPoints, sumPoints)
+        if (cancelled) {
+          return
+        }
         setShowRound(true)
-        controls.start({ scale: 1, transition: { duration: REVEAL_SECONDS } })
-        return roundAnimation
-      })
-      .then(() => {
-        controls.start({ scale: 1, transition: { duration: REVEAL_SECONDS } })
+        popIn()
+        await countUp(countRound, round)
+        if (cancelled) {
+          return
+        }
+        popIn()
         setShowAnswer(true)
-      })
+      } catch {
+        //nothing left to show
+      }
+    }
+    void reveal()
 
     return () => {
-      pointsAnimation.stop()
-      roundAnimation.stop()
+      cancelled = true
+      running.forEach((animation) => animation.stop())
     }
   }, [controls, countPoints, countRound, round, sumPoints])
 
@@ -74,7 +98,7 @@ const GameOverModal = () => {
     <div className='modal-backdrop'>
       <motion.div className='modal-content' {...MODAL_ENTRY}>
         <h2>Game Over</h2>
-        {responseText && <p>{responseText}</p>}
+        {responseText && !spoilsAnswer && <p>{responseText}</p>}
         <motion.p initial={POP_IN} animate={controls}>
           You acquired: <motion.span>{roundedPoints}</motion.span> points.
         </motion.p>
@@ -96,6 +120,7 @@ const GameOverModal = () => {
             dealt a final blow to you.
           </motion.p>
         )}
+        <GameHistory />
         <button
           className='button-common'
           onClick={() => dispatch(resetState())}
