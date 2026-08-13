@@ -8,6 +8,7 @@ import {
   GAME_THUNK_PREFIX,
   loadRoundHistory,
   resetState,
+  restorePlayedGames,
   restoreWrongGuesses,
   setActiveIndex,
   setIsPlaying,
@@ -43,6 +44,7 @@ export interface AppState {
   isPlaying: boolean
   status: RequestStatus
   error: string | null
+  playedGames: string[]
   wrongGuesses: WrongGuess[]
   pendingRequestId: string | null
   abilityCooldowns: Record<string, number>
@@ -93,6 +95,7 @@ const initialState: AppState = {
   isPlaying: false,
   status: RequestStatus.Idle,
   error: null,
+  playedGames: [],
   wrongGuesses: [],
   pendingRequestId: null,
   abilityCooldowns: {},
@@ -126,6 +129,10 @@ const applyGameState = (state: AppState, payload: GameState) => {
   state.isInfinite = payload.is_infinite
   state.abilityCooldowns = payload.ability_cooldowns ?? {}
   state.clipTimes = payload.clip_times ?? []
+
+  if (payload.correct_answer && !state.playedGames.includes(payload.correct_answer)) {
+    state.playedGames.push(payload.correct_answer)
+  }
 
   if (roundChanged) {
     state.wrongGuesses = []
@@ -190,10 +197,14 @@ const reducer = createReducer(initialState, (builder) => {
       state.error = null
     })
     .addCase(resetState, () => initialState)
+    .addCase(restorePlayedGames, (state, action) => {
+      state.playedGames = action.payload
+    })
     .addCase(restoreWrongGuesses, (state, action) => {
       state.wrongGuesses = action.payload
     })
     .addCase(startGame.fulfilled, (state) => {
+      state.playedGames = []
       state.wrongGuesses = []
       state.roundHistory = []
       state.historyStatus = RequestStatus.Idle
