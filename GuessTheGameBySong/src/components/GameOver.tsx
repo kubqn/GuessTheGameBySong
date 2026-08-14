@@ -16,8 +16,9 @@ import {
   selectResponseText,
   selectRound,
 } from '../store/selectors'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import GameHistory from './GameHistory'
+import { STEP_BY_KEY } from './others/arrowSteps'
 
 const COUNTER_START_VALUE = 500
 const COUNT_UP_SECONDS = 2
@@ -30,6 +31,9 @@ const MODAL_ENTRY = {
   transition: { duration: 3.5, type: 'spring' as const, bounce: 0.75 },
 }
 const POP_IN = { scale: 1.5 }
+const TITLE_ID = 'game-over-title'
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
 
 const GameOverModal = () => {
   const dispatch = useAppDispatch()
@@ -52,6 +56,58 @@ const GameOverModal = () => {
   const [showRound, setShowRound] = useState(false)
   const [showAnswer, setShowAnswer] = useState(false)
   const sumPoints = points + bonusPoints
+
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    dialogRef.current?.focus()
+  }, [])
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const dialog = dialogRef.current
+    if (!dialog) {
+      return
+    }
+    const stops = [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)]
+    const first = stops[0]
+    const last = stops[stops.length - 1]
+    if (!first) {
+      if (event.key === 'Tab') {
+        event.preventDefault()
+      }
+      return
+    }
+
+    const step = STEP_BY_KEY[event.key]
+    if (step !== undefined) {
+      event.preventDefault()
+      const at = stops.indexOf(document.activeElement as HTMLElement)
+      const next =
+        at === -1
+          ? step > 0
+            ? 0
+            : stops.length - 1
+          : (at + step + stops.length) % stops.length
+      stops[next].focus()
+      return
+    }
+
+    if (event.key !== 'Tab') {
+      return
+    }
+    const leavingBackwards =
+      event.shiftKey &&
+      (document.activeElement === first || document.activeElement === dialog)
+    if (leavingBackwards) {
+      event.preventDefault()
+      last.focus()
+      return
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
 
   const spoilsAnswer = Boolean(answer && responseText.includes(answer))
 
@@ -96,8 +152,17 @@ const GameOverModal = () => {
 
   return (
     <div className='modal-backdrop'>
-      <motion.div className='modal-content' {...MODAL_ENTRY}>
-        <h2>Game Over</h2>
+      <motion.div
+        className='modal-content'
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby={TITLE_ID}
+        tabIndex={-1}
+        ref={dialogRef}
+        onKeyDown={handleKeyDown}
+        {...MODAL_ENTRY}
+      >
+        <h2 id={TITLE_ID}>Game Over</h2>
         {responseText && !spoilsAnswer && <p>{responseText}</p>}
         <motion.p initial={POP_IN} animate={controls}>
           You acquired: <motion.span>{roundedPoints}</motion.span> points.

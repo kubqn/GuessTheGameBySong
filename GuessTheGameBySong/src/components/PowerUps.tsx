@@ -8,6 +8,7 @@ import { KeyAction } from '../store/keybindings'
 import { useAppSelector } from '../store/hooks'
 import useCoarsePointer from './others/useCoarsePointer'
 import { ABILITY_ICONS } from './others/abilityIcons'
+import { STEP_BY_KEY } from './others/arrowSteps'
 import {
   selectAbilityCatalog,
   selectAbilityCooldowns,
@@ -63,13 +64,6 @@ const ORDER: Ability[] = [
   Ability.Unlock,
   Ability.Shield,
 ]
-
-const STEP_BY_KEY: Record<string, number> = {
-  ArrowRight: 1,
-  ArrowDown: 1,
-  ArrowLeft: -1,
-  ArrowUp: -1,
-}
 
 const AbilityDetail = ({
   info,

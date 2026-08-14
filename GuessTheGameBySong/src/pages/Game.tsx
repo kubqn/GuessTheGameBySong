@@ -169,7 +169,7 @@ const Game = () => {
   }, [dispatch])
 
   useKeyboardControls({
-    active: phase === GamePhase.Playing,
+    active: phase === GamePhase.Playing && !gameEnded,
     inputRef: guessInputRef,
     powerUpsRef,
     onSkip: handleSkip,
