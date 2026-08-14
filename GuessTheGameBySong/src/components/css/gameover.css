@@ -17,6 +17,7 @@
   min-height: 350px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
   width: 50vh;
   min-width: 380px;
   padding: 20px;

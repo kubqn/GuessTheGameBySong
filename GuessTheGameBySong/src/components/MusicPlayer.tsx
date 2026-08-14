@@ -86,6 +86,7 @@ const MusicPlayer = () => {
   const retryTimerRef = useRef(0)
 
   const reloadClip = useCallback(() => {
+    clearTimeout(retryTimerRef.current)
     setPlaybackSource(source ? resolveWarmUrl(source) : '')
     setLoadAttempt((attempt) => attempt + 1)
   }, [source])
@@ -115,6 +116,7 @@ const MusicPlayer = () => {
       return
     }
     dispatch(setIsPlaying(false))
+    clearTimeout(retryTimerRef.current)
     if (retriesRef.current >= MAX_LOAD_RETRIES) {
       setRefetching(false)
       setLoadFailed(true)
@@ -211,6 +213,7 @@ const MusicPlayer = () => {
     if (!audio || !Number.isFinite(audio.duration)) {
       return
     }
+    clearTimeout(retryTimerRef.current)
     retriesRef.current = 0
     setRefetching(false)
     setDuration(audio.duration || CLIP_SECONDS)

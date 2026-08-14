@@ -26,6 +26,7 @@ export const setActiveIndex = createAction<number>('SET_ACTIVE_INDEX')
 export const setIsPlaying = createAction<boolean>('SET_IS_PLAYING')
 export const clearError = createAction('CLEAR_ERROR')
 export const resetState = createAction('RESET_STATE')
+export const restorePlayedGames = createAction<string[]>('RESTORE_PLAYED_GAMES')
 export const restoreWrongGuesses = createAction<WrongGuess[]>(
   'RESTORE_WRONG_GUESSES'
 )

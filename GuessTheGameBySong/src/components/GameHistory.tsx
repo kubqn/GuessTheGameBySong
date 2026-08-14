@@ -1,6 +1,6 @@
 import './css/gamehistory.css'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FaArrowsRotate, FaChevronUp } from 'react-icons/fa6'
 import { Ability, type RoundHistoryEntry } from '../api'
 import { loadRoundHistory } from '../store/actions'
@@ -93,10 +93,27 @@ const GameHistory = () => {
   const status = useAppSelector(selectHistoryStatus)
   const { reduceAnimations } = useAppSelector(selectSettings)
   const [expanded, setExpanded] = useState(false)
+  const toggleRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     dispatch(loadRoundHistory())
   }, [dispatch])
+
+  useEffect(() => {
+    if (!expanded) {
+      return
+    }
+    const collapseOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return
+      }
+      event.preventDefault()
+      setExpanded(false)
+      toggleRef.current?.focus()
+    }
+    window.addEventListener('keydown', collapseOnEscape)
+    return () => window.removeEventListener('keydown', collapseOnEscape)
+  }, [expanded])
 
   const failed = status === RequestStatus.Error
   if (!failed && history.length === 0) {
@@ -111,6 +128,7 @@ const GameHistory = () => {
         className={`history-toggle${expanded ? ' is-open' : ''}`}
         aria-expanded={expanded}
         aria-controls={PANEL_ID}
+        ref={toggleRef}
         onClick={() => setExpanded((open) => !open)}
       >
         <span>Game History</span>

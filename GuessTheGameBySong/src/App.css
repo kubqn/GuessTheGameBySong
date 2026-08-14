@@ -48,6 +48,36 @@ h6 {
   --panel-width: 380px;
 }
 
+@supports (-moz-appearance: none) {
+  :root {
+    scrollbar-color: var(--dark) var(--light-dark);
+  }
+
+  * {
+    scrollbar-width: thin;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+::-webkit-scrollbar-track {
+  margin: 2px 0;
+  background: var(--light-dark);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--dark);
+  border-radius: 3px;
+}
+
 body {
   color: white;
   text-shadow: 3px 3px 3px #000000;
